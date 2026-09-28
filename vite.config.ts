@@ -13,5 +13,12 @@ export default defineConfig({
   },
   server: {
     port: 5173,
+    strictPort: true, // fail instead of silently hopping to 5174 when 5173 is already taken
+    proxy: {
+      "/api": {
+        target: "http://127.0.0.1:8000",
+        changeOrigin: true,
+      },
+    },
   },
 });

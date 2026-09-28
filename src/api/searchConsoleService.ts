@@ -22,6 +22,10 @@ async function sync(businessId: number): Promise<void> {
   await apiClient.post(`/search-console/${businessId}/sync/`);
 }
 
+async function disconnect(businessId: number): Promise<void> {
+  await apiClient.post(`/search-console/${businessId}/disconnect/`);
+}
+
 async function getOverview(businessId: number, rangeDays: number): Promise<Overview> {
   const { data } = await apiClient.get<Overview>(`/search-console/${businessId}/overview/`, { params: { range: rangeDays } });
   return data;
@@ -37,4 +41,4 @@ async function getTopPages(businessId: number): Promise<TopPage[]> {
   return data;
 }
 
-export const searchConsoleService = { getStatus, connect, sync, getOverview, getTopQueries, getTopPages };
+export const searchConsoleService = { getStatus, connect, sync, disconnect, getOverview, getTopQueries, getTopPages };

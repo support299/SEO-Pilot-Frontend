@@ -1,7 +1,7 @@
 import axios, { AxiosError, type InternalAxiosRequestConfig } from "axios";
 import { ApiError, type ApiErrorBody } from "@/types/api";
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000/api/v1";
+const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? (import.meta.env.DEV ? "/api/v1" : "http://localhost:8000/api/v1");
 
 /**
  * The access token lives in memory only — never localStorage/sessionStorage.

@@ -71,13 +71,13 @@ export function DashboardPage() {
           ) : null}
 
           {businesses?.map((business) => (
-            <Link key={business.id} to={`/businesses/${business.id}`}>
+            <Link key={business.id} to={`/businesses/${business.id}/overview`}>
               <Card className="flex items-center justify-between transition hover:border-primary/40">
                 <div>
                   <p className="text-sm font-medium text-foreground">{business.name}</p>
                   <p className="text-sm text-muted">{business.website || "No website added"}</p>
                 </div>
-                <span className="text-sm text-muted">View search performance →</span>
+                <span className="text-sm text-muted">Open workspace →</span>
               </Card>
             </Link>
           ))}

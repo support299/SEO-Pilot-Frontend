@@ -1,101 +1,12 @@
-import { useEffect, useState } from "react";
-import { Link, useParams, useSearchParams } from "react-router-dom";
-import { businessService } from "@/api/businessService";
-import { Button } from "@/components/ui/Button";
-import { EmptyState, ErrorText, LoadingState, SuccessText } from "@/components/ui/Feedback";
 import { DateRangeTabs } from "@/components/search-console/DateRangeTabs";
 import { StatTile } from "@/components/search-console/StatTile";
 import { TopTable } from "@/components/search-console/TopTable";
 import { TrendChart } from "@/components/search-console/TrendChart";
+import { Button } from "@/components/ui/Button";
+import { ErrorText, LoadingState } from "@/components/ui/Feedback";
 import { useSearchConsole } from "@/hooks/useSearchConsole";
-import type { Business } from "@/types/business";
 
-const SC_ERROR_MESSAGES: Record<string, string> = {
-  denied: "You didn't grant access, so nothing was connected.",
-  connection_failed: "Something went wrong connecting to Google. Please try again.",
-};
-
-export function BusinessDetailPage() {
-  const { id } = useParams<{ id: string }>();
-  const businessId = Number(id);
-  const [searchParams] = useSearchParams();
-
-  const [business, setBusiness] = useState<Business | null>(null);
-  const [loadError, setLoadError] = useState<string | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    businessService.get(businessId).then(
-      (data) => {
-        if (!cancelled) setBusiness(data);
-      },
-      () => {
-        if (!cancelled) setLoadError("Couldn't load this business.");
-      },
-    );
-    return () => {
-      cancelled = true;
-    };
-  }, [businessId]);
-
-  const sc = useSearchConsole(businessId);
-
-  const scError = searchParams.get("scError");
-  const scConnected = searchParams.get("scConnected");
-
-  if (loadError) return <ErrorText>{loadError}</ErrorText>;
-  if (!business) return <LoadingState label="Loading business…" />;
-
-  return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-surface">
-        <div className="mx-auto max-w-3xl px-6 py-4">
-          <Link to="/" className="text-sm text-muted hover:text-foreground">
-            ← All businesses
-          </Link>
-        </div>
-      </header>
-
-      <main className="mx-auto max-w-3xl px-6 py-10">
-        <h1 className="text-2xl font-semibold text-foreground">{business.name}</h1>
-        <p className="mt-1 text-sm text-muted">{business.website || "No website added yet"}</p>
-
-        <div className="mt-6 flex flex-col gap-6">
-          {scError ? <ErrorText>{SC_ERROR_MESSAGES[scError] ?? "Something went wrong."}</ErrorText> : null}
-          {scConnected ? <SuccessText>Google Search Console connected. Syncing your first data now…</SuccessText> : null}
-
-          {sc.statusState === "loading" || sc.statusState === "idle" ? <LoadingState label="Checking Search Console connection…" /> : null}
-
-          {sc.statusState === "loaded" && sc.status && !sc.status.connected ? (
-            <EmptyState
-              title="No SEO data yet"
-              description={`Connect Google Search Console to start seeing real search performance for ${business.name} — clicks, impressions, and what needs attention.`}
-              action={<Button onClick={() => sc.connect()}>Connect Google Search Console</Button>}
-            />
-          ) : null}
-
-          {sc.status?.connected ? (
-            <SearchConsoleSection
-              siteUrl={sc.status.site_url}
-              lastSyncedAt={sc.status.last_synced_at}
-              lastSyncError={sc.status.last_sync_error}
-              range={sc.range}
-              onRangeChange={sc.setRange}
-              overviewState={sc.overviewState}
-              overview={sc.overview}
-              topQueries={sc.topQueries}
-              topPages={sc.topPages}
-              isSyncing={sc.isSyncing}
-              onSync={() => sc.sync()}
-            />
-          ) : null}
-        </div>
-      </main>
-    </div>
-  );
-}
-
-function SearchConsoleSection({
+export function SearchConsoleDashboard({
   siteUrl,
   lastSyncedAt,
   lastSyncError,
@@ -107,6 +18,8 @@ function SearchConsoleSection({
   topPages,
   isSyncing,
   onSync,
+  isDisconnecting,
+  onDisconnect,
 }: {
   siteUrl: string;
   lastSyncedAt: string | null;
@@ -119,6 +32,8 @@ function SearchConsoleSection({
   topPages: ReturnType<typeof useSearchConsole>["topPages"];
   isSyncing: boolean;
   onSync: () => void;
+  isDisconnecting: boolean;
+  onDisconnect: () => void;
 }) {
   const displayName = siteUrl.replace(/^sc-domain:/, "");
 
@@ -135,6 +50,9 @@ function SearchConsoleSection({
           <DateRangeTabs active={range} onChange={onRangeChange} />
           <Button variant="secondary" onClick={onSync} loading={isSyncing}>
             Sync now
+          </Button>
+          <Button variant="danger" onClick={onDisconnect} loading={isDisconnecting}>
+            Disconnect
           </Button>
         </div>
       </div>

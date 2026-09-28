@@ -22,6 +22,7 @@ export function useSearchConsole(businessId: number) {
   const [topPages, setTopPages] = useState<TopPage[] | null>(null);
 
   const [isSyncing, setIsSyncing] = useState(false);
+  const [isDisconnecting, setIsDisconnecting] = useState(false);
   // Bumping this re-runs the "load status" effect — used to force a refresh
   // after a background sync completes, without calling setState synchronously
   // at the top of an effect body.
@@ -80,6 +81,19 @@ export function useSearchConsole(businessId: number) {
     await searchConsoleService.connect(businessId); // navigates the browser away — nothing to await here in practice
   }
 
+  async function disconnect() {
+    setIsDisconnecting(true);
+    try {
+      await searchConsoleService.disconnect(businessId);
+      setOverview(null);
+      setTopQueries(null);
+      setTopPages(null);
+      setStatusReloadToken((token) => token + 1);
+    } finally {
+      setIsDisconnecting(false);
+    }
+  }
+
   async function sync() {
     setIsSyncing(true);
     try {
@@ -102,7 +116,9 @@ export function useSearchConsole(businessId: number) {
     topQueries,
     topPages,
     isSyncing,
+    isDisconnecting,
     connect,
     sync,
+    disconnect,
   };
 }

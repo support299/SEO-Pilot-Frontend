@@ -1,3 +1,5 @@
+import { ColumnHint } from "@/components/ui/ColumnHint";
+
 type Row = { label: string; clicks: number; impressions: number; ctr: number; position: number };
 
 export function TopTable({ title, rows, labelHeader, error }: { title: string; rows: Row[]; labelHeader: string; error?: string }) {
@@ -15,9 +17,13 @@ export function TopTable({ title, rows, labelHeader, error }: { title: string; r
             <tr className="border-b border-border text-left text-xs text-muted">
               <th className="pb-2 font-medium">{labelHeader}</th>
               <th className="pb-2 pl-3 pr-1 text-right font-medium">Clicks</th>
-              <th className="pb-2 pl-3 pr-1 text-right font-medium">Impr.</th>
+              <th className="pb-2 pl-3 pr-1 text-right font-medium">
+                <ColumnHint label="Impressions" hint="How many times this result showed up in Google search." />
+              </th>
               <th className="pb-2 pl-3 pr-1 text-right font-medium">CTR</th>
-              <th className="pb-2 pl-3 text-right font-medium">Pos.</th>
+              <th className="pb-2 pl-3 text-right font-medium">
+                <ColumnHint label="Position" hint="Average place in Google results. 1 is the top result. A higher number means it usually appeared further down." />
+              </th>
             </tr>
           </thead>
           <tbody>

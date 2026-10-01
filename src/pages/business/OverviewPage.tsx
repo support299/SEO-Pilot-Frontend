@@ -5,10 +5,12 @@ import { Button } from "@/components/ui/Button";
 import { ErrorText, LoadingState } from "@/components/ui/Feedback";
 import { useBusiness } from "@/hooks/useBusiness";
 import { useSearchConsole } from "@/hooks/useSearchConsole";
+import { useSiteHealth } from "@/hooks/useSiteHealth";
 
 export function OverviewPage() {
   const { business } = useBusiness();
   const sc = useSearchConsole(business.id);
+  const health = useSiteHealth(business.id);
   const base = `/businesses/${business.id}`;
 
   return (
@@ -48,6 +50,7 @@ export function OverviewPage() {
           overview={sc.overview}
           topQueries={sc.topQueries}
           topPages={sc.topPages}
+          crawl={health.report}
         />
       ) : null}
     </>

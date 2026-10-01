@@ -4,6 +4,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { BusinessIndexRedirect } from "@/pages/business/BusinessIndexRedirect";
 import { ConnectionsPage } from "@/pages/business/ConnectionsPage";
 import { OverviewPage } from "@/pages/business/OverviewPage";
+import { PagesPage } from "@/pages/business/PagesPage";
 import { PerformancePage } from "@/pages/business/PerformancePage";
 import { SettingsPage } from "@/pages/business/SettingsPage";
 import { SiteHealthPage } from "@/pages/business/SiteHealthPage";
@@ -42,7 +43,7 @@ export default function App() {
             <Route path="performance" element={<PerformancePage />} />
             <Route path="local-visibility" element={<StubPage copy={stubCopy.localVisibility} />} />
             <Route path="opportunities" element={<StubPage copy={stubCopy.opportunities} />} />
-            <Route path="pages" element={<StubPage copy={stubCopy.pages} />} />
+            <Route path="pages" element={<PagesPage />} />
             <Route path="manager" element={<StubPage copy={stubCopy.manager} />} />
             <Route path="approvals" element={<StubPage copy={stubCopy.approvals} />} />
             <Route path="site-health" element={<SiteHealthPage />} />

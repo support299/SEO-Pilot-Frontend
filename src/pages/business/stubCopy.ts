@@ -15,13 +15,6 @@ export const stubCopy = {
     emptyTitle: "No opportunities yet",
     emptyDescription: "There is no opportunity list for {business}. This is not sample data.",
   },
-  pages: {
-    eyebrow: "Content & pages",
-    title: "Pages",
-    description: "Indexed and analyzed pages will appear here after a crawl or Search Console page inventory exists.",
-    emptyTitle: "No pages analyzed",
-    emptyDescription: "SEO Pilot has not inventoried pages for {business} yet.",
-  },
   manager: {
     eyebrow: "SEO Manager",
     title: "SEO Manager",

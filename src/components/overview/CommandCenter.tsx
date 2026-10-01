@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import type { SiteHealthReport } from "@/types/siteHealth";
 import type { ConnectionStatus, Overview, RangeDays, TopPage, TopQuery } from "@/types/searchConsole";
 
 type Scorecard = {
@@ -16,6 +17,7 @@ export function CommandCenter({
   overview,
   topQueries,
   topPages,
+  crawl,
 }: {
   businessId: number;
   businessName: string;
@@ -24,11 +26,12 @@ export function CommandCenter({
   overview: Overview | null;
   topQueries: TopQuery[] | null;
   topPages: TopPage[] | null;
+  crawl: SiteHealthReport | null;
 }) {
   const base = `/businesses/${businessId}`;
   const connected = status.connected;
   const hasRows = Boolean(overview && overview.rows.length > 0);
-  const briefing = buildBriefing({ connected, hasRows, overview, topQueries, topPages, range });
+  const briefing = buildBriefing({ connected, hasRows, overview, topQueries, topPages, range, crawl });
 
   return (
     <div className="flex flex-col gap-6">
@@ -108,6 +111,7 @@ function buildBriefing({
   topQueries,
   topPages,
   range,
+  crawl,
 }: {
   connected: boolean;
   hasRows: boolean;
@@ -115,6 +119,7 @@ function buildBriefing({
   topQueries: TopQuery[] | null;
   topPages: TopPage[] | null;
   range: RangeDays;
+  crawl: SiteHealthReport | null;
 }): {
   status: string;
   explanation: string;
@@ -125,8 +130,6 @@ function buildBriefing({
   problem: { title: string; detail: string };
   next: { title: string; detail: string };
 } {
-  const gaps = gapScorecards();
-
   if (!connected) {
     return {
       status: "Not connected",
@@ -139,7 +142,7 @@ function buildBriefing({
         gapCard("Average CTR", "Not connected", "Needs Google Search Console."),
         gapCard("Average position", "Not connected", "Needs Google Search Console."),
         gapCard("Top 10 keywords", "Not connected", "Needs the Search Console query snapshot."),
-        ...gaps,
+        ...healthCards(crawl),
       ],
       win: { title: "No win to report", detail: "There is no Search Console query or page snapshot for this business yet." },
       problem: { title: "Search performance is not measured", detail: "Without Search Console, this workspace cannot say whether search is up or down." },
@@ -159,7 +162,7 @@ function buildBriefing({
         gapCard("Average CTR", "No data yet", `Nothing stored for the last ${range} days.`),
         gapCard("Average position", "No data yet", `Nothing stored for the last ${range} days.`),
         topTenCard(topQueries),
-        ...gaps,
+        ...healthCards(crawl),
       ],
       win: highlight(topQueries, topPages, "win"),
       problem: highlight(topQueries, topPages, "problem"),
@@ -199,7 +202,7 @@ function buildBriefing({
         comparison?.position_delta != null ? `${formatSigned(comparison.position_delta)} positions vs previous period` : "No prior period to compare",
       ),
       topTenCard(topQueries),
-      ...gaps,
+      ...healthCards(crawl),
     ],
     win: highlight(topQueries, topPages, "win"),
     problem: highlight(topQueries, topPages, "problem"),
@@ -207,13 +210,40 @@ function buildBriefing({
   };
 }
 
-function gapScorecards(): Scorecard[] {
-  return [
-    gapCard("SEO Health", "Not yet measurable", "No site crawl is connected."),
-    gapCard("Critical issues", "Not yet measurable", "No crawl findings exist for this business."),
+function healthCards(crawl: SiteHealthReport | null): Scorecard[] {
+  const leads = [
     gapCard("Organic leads", "Not connected", "Google Analytics and CRM are not connected."),
     gapCard("Organic pipeline", "Not connected", "No CRM attribution is connected."),
-    gapCard("Indexed pages", "Not yet measurable", "No crawl or index-coverage API is connected."),
+  ];
+  if (!crawl || crawl.status === "none") {
+    return [
+      gapCard("SEO Health", "Not yet measurable", "No site crawl has been run."),
+      gapCard("Critical issues", "Not yet measurable", "No crawl findings exist for this business."),
+      ...leads,
+      gapCard("Pages crawled", "Not yet measurable", "Run a site crawl. This is not a Google index count."),
+    ];
+  }
+  if (crawl.status === "queued" || crawl.status === "running") {
+    return [
+      gapCard("SEO Health", "Crawl in progress", "The crawl has not finished."),
+      gapCard("Critical issues", "Crawl in progress", "Findings appear when the crawl finishes."),
+      ...leads,
+      gapCard("Pages crawled", "Crawl in progress", "Pages appear when the crawl finishes."),
+    ];
+  }
+  if (crawl.status !== "completed" || crawl.score === null) {
+    return [
+      gapCard("SEO Health", "Crawl failed", crawl.error || "The last crawl did not finish."),
+      gapCard("Critical issues", "Crawl failed", "No findings were saved."),
+      ...leads,
+      gapCard("Pages crawled", "Crawl failed", "No pages were saved from the last crawl."),
+    ];
+  }
+  return [
+    observedCard("SEO Health", `${crawl.score} / 100`, "From the latest crawl of this website. Not a Google score."),
+    observedCard("Critical issues", String(crawl.critical_issues), "Crawled URLs that did not load."),
+    ...leads,
+    observedCard("Pages crawled", crawl.pages_crawled.toLocaleString("en-US"), "Pages fetched from this website. Not Google's indexed-page count."),
   ];
 }
 
@@ -250,7 +280,7 @@ function formatSigned(value: number): string {
 }
 
 function statusExplanation(status: string, range: number): string {
-  if (status === "Improving") return `Clicks and impressions are both higher than the previous ${range} days. Lead and crawl numbers are still not measured.`;
+  if (status === "Improving") return `Clicks and impressions are both higher than the previous ${range} days. Lead attribution is still not connected.`;
   if (status === "Down") return `Clicks and impressions are both lower than the previous ${range} days. This is search performance only.`;
   if (status === "Mixed") return `Clicks and impressions moved in different directions over the last ${range} days. Compare them on Performance before calling a trend.`;
   return `Search Console totals are in for the last ${range} days. There is not enough prior-period history to call the trend up or down.`;

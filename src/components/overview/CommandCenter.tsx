@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import type { AnalyticsSnapshot } from "@/types/analytics";
 import type { SiteHealthReport } from "@/types/siteHealth";
 import type { ConnectionStatus, Overview, RangeDays, TopPage, TopQuery } from "@/types/searchConsole";
 
@@ -18,6 +19,7 @@ export function CommandCenter({
   topQueries,
   topPages,
   crawl,
+  analytics,
 }: {
   businessId: number;
   businessName: string;
@@ -27,11 +29,12 @@ export function CommandCenter({
   topQueries: TopQuery[] | null;
   topPages: TopPage[] | null;
   crawl: SiteHealthReport | null;
+  analytics: AnalyticsSnapshot;
 }) {
   const base = `/businesses/${businessId}`;
   const connected = status.connected;
   const hasRows = Boolean(overview && overview.rows.length > 0);
-  const briefing = buildBriefing({ connected, hasRows, overview, topQueries, topPages, range, crawl });
+  const briefing = buildBriefing({ connected, hasRows, overview, topQueries, topPages, range, crawl, analytics });
 
   return (
     <div className="flex flex-col gap-6">
@@ -112,6 +115,7 @@ function buildBriefing({
   topPages,
   range,
   crawl,
+  analytics,
 }: {
   connected: boolean;
   hasRows: boolean;
@@ -120,6 +124,7 @@ function buildBriefing({
   topPages: TopPage[] | null;
   range: RangeDays;
   crawl: SiteHealthReport | null;
+  analytics: AnalyticsSnapshot;
 }): {
   status: string;
   explanation: string;
@@ -142,7 +147,7 @@ function buildBriefing({
         gapCard("Average CTR", "Not connected", "Needs Google Search Console."),
         gapCard("Average position", "Not connected", "Needs Google Search Console."),
         gapCard("Top 10 keywords", "Not connected", "Needs the Search Console query snapshot."),
-        ...healthCards(crawl),
+        ...healthCards(crawl, analytics),
       ],
       win: { title: "No win to report", detail: "There is no Search Console query or page snapshot for this business yet." },
       problem: { title: "Search performance is not measured", detail: "Without Search Console, this workspace cannot say whether search is up or down." },
@@ -162,7 +167,7 @@ function buildBriefing({
         gapCard("Average CTR", "No data yet", `Nothing stored for the last ${range} days.`),
         gapCard("Average position", "No data yet", `Nothing stored for the last ${range} days.`),
         topTenCard(topQueries),
-        ...healthCards(crawl),
+        ...healthCards(crawl, analytics),
       ],
       win: highlight(topQueries, topPages, "win"),
       problem: highlight(topQueries, topPages, "problem"),
@@ -189,7 +194,7 @@ function buildBriefing({
 
   return {
     status,
-    explanation: statusExplanation(status, range),
+    explanation: statusExplanation(status, range, analytics),
     evidence: "Observed in Search Console",
     dot,
     scorecards: [
@@ -202,7 +207,7 @@ function buildBriefing({
         comparison?.position_delta != null ? `${formatSigned(comparison.position_delta)} positions vs previous period` : "No prior period to compare",
       ),
       topTenCard(topQueries),
-      ...healthCards(crawl),
+      ...healthCards(crawl, analytics),
     ],
     win: highlight(topQueries, topPages, "win"),
     problem: highlight(topQueries, topPages, "problem"),
@@ -210,11 +215,8 @@ function buildBriefing({
   };
 }
 
-function healthCards(crawl: SiteHealthReport | null): Scorecard[] {
-  const leads = [
-    gapCard("Organic leads", "Not connected", "Google Analytics and CRM are not connected."),
-    gapCard("Organic pipeline", "Not connected", "No CRM attribution is connected."),
-  ];
+function healthCards(crawl: SiteHealthReport | null, analytics: AnalyticsSnapshot): Scorecard[] {
+  const leads = measurementCards(analytics);
   if (!crawl || crawl.status === "none") {
     return [
       gapCard("SEO Health", "Not yet measurable", "No site crawl has been run."),
@@ -244,6 +246,41 @@ function healthCards(crawl: SiteHealthReport | null): Scorecard[] {
     observedCard("Critical issues", String(crawl.critical_issues), "Crawled URLs that did not load."),
     ...leads,
     observedCard("Pages crawled", crawl.pages_crawled.toLocaleString("en-US"), "Pages fetched from this website. Not Google's indexed-page count."),
+  ];
+}
+
+function measurementCards(analytics: AnalyticsSnapshot): Scorecard[] {
+  const pipeline = gapCard("Organic pipeline", "Not connected", "No CRM attribution is connected.");
+  if (analytics.checkFailed) {
+    return [
+      gapCard("Organic sessions", "Not yet measurable", "Google Analytics could not be checked."),
+      gapCard("Organic leads", "Not yet measurable", "Google Analytics could not be checked."),
+      pipeline,
+    ];
+  }
+  if (!analytics.connected) {
+    return [
+      gapCard("Organic sessions", "Not connected", "Needs Google Analytics."),
+      gapCard("Organic leads", "Not connected", "Needs Google Analytics. This is not a crawl or a CRM count."),
+      pipeline,
+    ];
+  }
+  if (!analytics.synced) {
+    return [
+      gapCard("Organic sessions", "No data yet", "Google Analytics is connected. The first sync has not finished."),
+      analytics.conversionsMeasurable
+        ? gapCard("Organic leads", "No data yet", "Key events are configured. Counts appear after the first sync.")
+        : gapCard("Organic leads", "Not yet measurable", "Google Analytics is connected, but this property has no key events."),
+      pipeline,
+    ];
+  }
+  const sessions = analytics.sessions ?? 0;
+  return [
+    observedCard("Organic sessions", sessions.toLocaleString("en-US"), `Organic Search sessions in GA4. ${percentDetail(analytics.sessionsDeltaPct)}`),
+    analytics.conversionsMeasurable && analytics.conversions !== null
+      ? observedCard("Organic leads", analytics.conversions.toLocaleString("en-US"), `Configured GA4 key events from organic search. ${percentDetail(analytics.conversionsDeltaPct)} Not a CRM count.`)
+      : gapCard("Organic leads", "Not yet measurable", "This GA4 property has no key events, so no lead count is shown."),
+    pipeline,
   ];
 }
 
@@ -279,11 +316,18 @@ function formatSigned(value: number): string {
   return rounded;
 }
 
-function statusExplanation(status: string, range: number): string {
-  if (status === "Improving") return `Clicks and impressions are both higher than the previous ${range} days. Lead attribution is still not connected.`;
+function statusExplanation(status: string, range: number, analytics: AnalyticsSnapshot): string {
+  if (status === "Improving") return `Clicks and impressions are both higher than the previous ${range} days. ${leadClause(analytics)}`;
   if (status === "Down") return `Clicks and impressions are both lower than the previous ${range} days. This is search performance only.`;
   if (status === "Mixed") return `Clicks and impressions moved in different directions over the last ${range} days. Compare them on Performance before calling a trend.`;
   return `Search Console totals are in for the last ${range} days. There is not enough prior-period history to call the trend up or down.`;
+}
+
+function leadClause(analytics: AnalyticsSnapshot): string {
+  if (analytics.checkFailed) return "Organic leads could not be checked.";
+  if (!analytics.connected) return "Organic leads are not connected.";
+  if (!analytics.conversionsMeasurable) return "Organic leads are not measurable until this GA4 property has a key event.";
+  return "Organic leads count configured GA4 key events only.";
 }
 
 type Row = { label: string; kind: "query" | "page"; clicks: number; impressions: number; position: number; ctr: number };

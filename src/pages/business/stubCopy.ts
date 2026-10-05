@@ -8,13 +8,6 @@ export const stubCopy = {
     emptyTitle: "Local visibility is not connected",
     emptyDescription: "No local listing or geo data is connected for {business} yet.",
   },
-  opportunities: {
-    eyebrow: "Opportunities",
-    title: "Opportunities",
-    description: "Ranked work items will show here after analysis exists for this site.",
-    emptyTitle: "No opportunities yet",
-    emptyDescription: "There is no opportunity list for {business}. This is not sample data.",
-  },
   manager: {
     eyebrow: "SEO Manager",
     title: "SEO Manager",

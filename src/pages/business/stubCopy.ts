@@ -15,13 +15,6 @@ export const stubCopy = {
     emptyTitle: "SEO Manager is not active",
     emptyDescription: "There is no sprint, agent, or weekly plan running for {business}.",
   },
-  approvals: {
-    eyebrow: "Approvals",
-    title: "Approvals",
-    description: "Major decisions that need an owner will land here.",
-    emptyTitle: "No decisions needed",
-    emptyDescription: "There are no pending approvals for {business}.",
-  },
   authority: {
     eyebrow: "Authority & Competition",
     title: "Authority",

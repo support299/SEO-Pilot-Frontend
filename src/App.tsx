@@ -1,6 +1,7 @@
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { ApprovalsPage } from "@/pages/business/ApprovalsPage";
 import { BusinessIndexRedirect } from "@/pages/business/BusinessIndexRedirect";
 import { ConnectionsPage } from "@/pages/business/ConnectionsPage";
 import { OpportunitiesPage } from "@/pages/business/OpportunitiesPage";
@@ -46,7 +47,7 @@ export default function App() {
             <Route path="opportunities" element={<OpportunitiesPage />} />
             <Route path="pages" element={<PagesPage />} />
             <Route path="manager" element={<StubPage copy={stubCopy.manager} />} />
-            <Route path="approvals" element={<StubPage copy={stubCopy.approvals} />} />
+            <Route path="approvals" element={<ApprovalsPage />} />
             <Route path="site-health" element={<SiteHealthPage />} />
             <Route path="authority" element={<StubPage copy={stubCopy.authority} />} />
             <Route path="connections" element={<ConnectionsPage />} />

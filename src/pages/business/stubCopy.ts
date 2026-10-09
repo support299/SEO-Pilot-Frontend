@@ -29,11 +29,4 @@ export const stubCopy = {
     emptyTitle: "No work in progress",
     emptyDescription: "There is no execution queue for {business} in this phase.",
   },
-  history: {
-    eyebrow: "History & Proof",
-    title: "History",
-    description: "A ledger of decisions and outcomes will appear after work has actually happened.",
-    emptyTitle: "No history yet",
-    emptyDescription: "Nothing has been recorded for {business} yet.",
-  },
 } satisfies Record<string, StubCopy>;

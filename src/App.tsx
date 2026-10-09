@@ -4,6 +4,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { ApprovalsPage } from "@/pages/business/ApprovalsPage";
 import { BusinessIndexRedirect } from "@/pages/business/BusinessIndexRedirect";
 import { ConnectionsPage } from "@/pages/business/ConnectionsPage";
+import { HistoryPage } from "@/pages/business/HistoryPage";
 import { OpportunitiesPage } from "@/pages/business/OpportunitiesPage";
 import { OverviewPage } from "@/pages/business/OverviewPage";
 import { PagesPage } from "@/pages/business/PagesPage";
@@ -52,7 +53,7 @@ export default function App() {
             <Route path="authority" element={<StubPage copy={stubCopy.authority} />} />
             <Route path="connections" element={<ConnectionsPage />} />
             <Route path="work" element={<StubPage copy={stubCopy.work} />} />
-            <Route path="history" element={<StubPage copy={stubCopy.history} />} />
+            <Route path="history" element={<HistoryPage />} />
             <Route path="settings" element={<SettingsPage />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />

@@ -1,4 +1,4 @@
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { AuthShell } from "@/components/AuthShell";
 import { Button } from "@/components/ui/Button";
 import { ErrorText } from "@/components/ui/Feedback";
@@ -23,14 +23,6 @@ export function SignInPage() {
     <AuthShell
       title="Sign in"
       subtitle="Welcome back"
-      footer={
-        <>
-          Don&apos;t have an account?{" "}
-          <Link to="/sign-up" className="font-medium text-primary hover:text-primary-hover">
-            Create one
-          </Link>
-        </>
-      }
     >
       <form onSubmit={onSubmit} className="flex flex-col gap-4">
         <Field label="Email" htmlFor="email">

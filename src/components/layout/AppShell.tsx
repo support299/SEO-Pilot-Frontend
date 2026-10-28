@@ -4,6 +4,7 @@ import { NavIcon } from "@/components/layout/NavIcon";
 import { navTitle, primaryNav, secondaryNav, sectionFromPathname } from "@/components/layout/navConfig";
 import logoStacked from "@/assets/brand/logo-stacked.png";
 import { useAuth } from "@/hooks/useAuth";
+import { usePendingDecisions } from "@/hooks/usePendingDecisions";
 import type { Business } from "@/types/business";
 
 export function AppShell({ business, children }: { business: Business; children: ReactNode }) {
@@ -12,6 +13,7 @@ export function AppShell({ business, children }: { business: Business; children:
   const section = sectionFromPathname(pathname);
   const base = `/businesses/${business.id}`;
   const [navOpen, setNavOpen] = useState(false);
+  const pendingDecisions = usePendingDecisions(business.id, pathname);
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -63,9 +65,18 @@ export function AppShell({ business, children }: { business: Business; children:
 
               <div className="flex shrink-0 items-center gap-3">
                 {business.can_edit ? (
-                  <span className="hidden min-h-9 items-center rounded-full border border-[#abefc6] bg-[#ecfdf3] px-3 text-xs font-semibold text-success sm:inline-flex">
-                    No decisions needed
-                  </span>
+                  pendingDecisions > 0 ? (
+                    <Link
+                      to={`${base}/approvals`}
+                      className="hidden min-h-9 items-center rounded-full border border-primary/30 bg-primary/10 px-3 text-xs font-semibold text-primary sm:inline-flex"
+                    >
+                      {pendingDecisions} {pendingDecisions === 1 ? "decision" : "decisions"} needed
+                    </Link>
+                  ) : (
+                    <span className="hidden min-h-9 items-center rounded-full border border-[#abefc6] bg-[#ecfdf3] px-3 text-xs font-semibold text-success sm:inline-flex">
+                      No decisions needed
+                    </span>
+                  )
                 ) : (
                   <span className="hidden min-h-9 items-center rounded-full border border-border bg-background px-3 text-xs font-semibold text-muted sm:inline-flex">View only</span>
                 )}

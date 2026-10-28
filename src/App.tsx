@@ -6,6 +6,7 @@ import { ApprovalsPage } from "@/pages/business/ApprovalsPage";
 import { BusinessIndexRedirect } from "@/pages/business/BusinessIndexRedirect";
 import { ConnectionsPage } from "@/pages/business/ConnectionsPage";
 import { ExecutionPage } from "@/pages/business/ExecutionPage";
+import { ManagerPage } from "@/pages/business/ManagerPage";
 import { LocalVisibilityPage } from "@/pages/business/LocalVisibilityPage";
 import { HistoryPage } from "@/pages/business/HistoryPage";
 import { OpportunitiesPage } from "@/pages/business/OpportunitiesPage";
@@ -51,7 +52,7 @@ export default function App() {
               <Route path="local-visibility" element={<LocalVisibilityPage />} />
               <Route path="opportunities" element={<OpportunitiesPage />} />
               <Route path="pages" element={<PagesPage />} />
-              <Route path="manager" element={<StubPage copy={stubCopy.manager} />} />
+              <Route path="manager" element={<ManagerPage />} />
               <Route path="approvals" element={<ApprovalsPage />} />
               <Route path="site-health" element={<SiteHealthPage />} />
               <Route path="authority" element={<StubPage copy={stubCopy.authority} />} />

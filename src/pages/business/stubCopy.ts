@@ -8,13 +8,6 @@ export const stubCopy = {
     emptyTitle: "Local visibility is not connected",
     emptyDescription: "No local listing or geo data is connected for {business} yet.",
   },
-  manager: {
-    eyebrow: "SEO Manager",
-    title: "SEO Manager",
-    description: "The AI operator workspace is not enabled in this phase.",
-    emptyTitle: "SEO Manager is not active",
-    emptyDescription: "There is no sprint, agent, or weekly plan running for {business}.",
-  },
   authority: {
     eyebrow: "Authority & Competition",
     title: "Authority",

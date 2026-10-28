@@ -2,9 +2,11 @@ import { Link } from "react-router-dom";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/Button";
 import { EmptyState, ErrorText, LoadingState } from "@/components/ui/Feedback";
+import { PacketGroup } from "@/components/wordpress/PacketGroup";
 import { useApprovals } from "@/hooks/useApprovals";
 import { useBusiness } from "@/hooks/useBusiness";
 import { useSiteHealth } from "@/hooks/useSiteHealth";
+import { useWordPress } from "@/hooks/useWordPress";
 import type { Approval, ApprovalDecision } from "@/types/approvals";
 
 const URL_PREVIEW_LIMIT = 5;
@@ -12,11 +14,13 @@ const URL_PREVIEW_LIMIT = 5;
 export function ApprovalsPage() {
   const { business } = useBusiness();
   const health = useSiteHealth(business.id);
+  const wp = useWordPress(business.id);
   const { approvals, loadState, workingId, decideError, decide } = useApprovals(business.id);
 
   const pending = approvals.filter((approval) => approval.status === "pending");
   const decided = approvals.filter((approval) => approval.status === "approved" || approval.status === "rejected");
   const resolved = approvals.filter((approval) => approval.status === "resolved");
+  const waitingChanges = wp.packets?.filter((p) => p.status === "awaiting_approval" || p.status === "stale" || p.status === "approved") ?? [];
   const crawlCompleted = health.loadState === "loaded" && health.report?.status === "completed";
 
   return (
@@ -24,8 +28,20 @@ export function ApprovalsPage() {
       <PageHeader
         eyebrow="Approvals"
         title="Approvals"
-        description="Each issue from the latest completed crawl is listed once, with the pages it affects. Approve it to mark it as work you want done, or reject it to set it aside. This only records your decision. SEO Pilot does not change your website."
+        description="Each issue from the latest completed crawl is listed once, with the pages it affects. Approve a crawl issue to mark it as work you want done, or reject it to set it aside; that only records your decision. Website changes suggested by you or an AI agent appear above and are published to WordPress only after you approve them."
       />
+
+      {waitingChanges.length > 0 ? (
+        <>
+          <PacketGroup label="Website changes waiting for you" packets={waitingChanges} wp={wp} canEdit={business.can_edit} />
+          <p className="text-sm text-muted">
+            Approving a website change lets it be published to WordPress, and you can undo it afterwards.{" "}
+            <Link to={`/businesses/${business.id}/work`} className="font-medium text-primary hover:text-primary-hover">
+              See all changes →
+            </Link>
+          </p>
+        </>
+      ) : null}
 
       {loadState === "loading" || loadState === "idle" ? <LoadingState label="Checking the latest crawl…" /> : null}
       {loadState === "error" ? <ErrorText>Couldn&apos;t load approvals right now.</ErrorText> : null}

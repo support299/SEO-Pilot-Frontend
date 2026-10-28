@@ -56,6 +56,7 @@ export function PerformancePage() {
           onSync={() => sc.sync()}
           isDisconnecting={sc.isDisconnecting}
           onDisconnect={() => sc.disconnect()}
+          canEdit={business.can_edit}
         />
       ) : null}
     </>

@@ -18,7 +18,7 @@ export function SiteHealthPage() {
         title="Site health"
         description="Findings from a crawl of this business website. Scores come from pages we fetched, not from Google's index or a lab performance test."
         action={
-          business.website ? (
+          business.website && business.can_edit ? (
             <Button onClick={() => health.startCrawl()} loading={health.isStarting || report?.status === "queued" || report?.status === "running"}>
               {report?.status === "completed" ? "Crawl again" : "Crawl site"}
             </Button>

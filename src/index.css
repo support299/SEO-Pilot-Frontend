@@ -3,14 +3,14 @@
 :root {
   --background: #f7f8fa;
   --surface: #ffffff;
-  --foreground: #14181f;
+  --foreground: #0f1b33;
   --muted: #6b7280;
   --border: #e5e7eb;
-  --primary: #2140d6;
-  --primary-hover: #1a34ad;
+  --primary: #0064fa; /* logo blue */
+  --primary-hover: #0052cc;
   --primary-contrast: #ffffff;
   --danger: #c0261f;
-  --success: #12805c;
+  --success: #009346; /* logo green */
 }
 
 @theme inline {

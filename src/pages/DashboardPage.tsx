@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { businessService } from "@/api/businessService";
+import { AgencyClients } from "@/components/agency/AgencyClients";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { EmptyState, ErrorText, LoadingState } from "@/components/ui/Feedback";
 import { Field, TextInput } from "@/components/ui/Field";
+import logoStacked from "@/assets/brand/logo-stacked.png";
 import { useAuth } from "@/hooks/useAuth";
 import { useForm } from "@/hooks/useForm";
 import type { Business } from "@/types/business";
@@ -19,8 +21,12 @@ export function DashboardPage() {
   const [reloadToken, setReloadToken] = useState(0);
 
   const account = accounts[0]; // Foundation phase: one account per user. Multi-account switching is a later increment.
+  const isAdmin = Boolean(user?.is_agency_admin); // agency staff: sees every customer and onboards new ones
+  const isViewer = !isAdmin && account?.role === "viewer"; // customer login: results only
+  const canAddBusiness = !isAdmin && !isViewer && Boolean(account);
 
   useEffect(() => {
+    if (isAdmin) return; // agency admins load the clients list in <AgencyClients />
     let cancelled = false;
 
     businessService.list().then(
@@ -35,7 +41,7 @@ export function DashboardPage() {
     return () => {
       cancelled = true;
     };
-  }, [reloadToken]);
+  }, [reloadToken, isAdmin]);
 
   function reloadBusinesses() {
     setReloadToken((token) => token + 1);
@@ -44,10 +50,10 @@ export function DashboardPage() {
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-surface">
-        <div className="mx-auto flex max-w-3xl items-center justify-between px-6 py-4">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-sm font-semibold text-primary-contrast">S</div>
-            <span className="text-sm font-medium text-foreground">{account?.name ?? "Your account"}</span>
+        <div className="mx-auto flex max-w-3xl items-center justify-between px-6 py-3">
+          <div className="flex items-center gap-3">
+            <img src={logoStacked} alt="The Service Pilot" className="h-14 w-auto" />
+            <span className="border-l border-border pl-2.5 text-sm font-medium text-foreground">{isAdmin ? "SEO Pilot · Agency" : (account?.name ?? "Your account")}</span>
           </div>
           <div className="flex items-center gap-4">
             <span className="hidden text-sm text-muted sm:inline">{user?.email}</span>
@@ -59,31 +65,35 @@ export function DashboardPage() {
       </header>
 
       <main className="mx-auto max-w-3xl px-6 py-10">
-        <h1 className="text-2xl font-semibold text-foreground">Your businesses</h1>
+        <h1 className="text-2xl font-semibold text-foreground">{isAdmin ? "Clients" : isViewer ? "Your websites" : "Your businesses"}</h1>
 
-        <div className="mt-6 flex flex-col gap-4">
-          {loadError ? <ErrorText>{loadError}</ErrorText> : null}
+        {isAdmin ? (
+          <AgencyClients />
+        ) : (
+          <div className="mt-6 flex flex-col gap-4">
+            {loadError ? <ErrorText>{loadError}</ErrorText> : null}
 
-          {businesses === null && !loadError ? <LoadingState label="Loading your businesses…" /> : null}
+            {businesses === null && !loadError ? <LoadingState label="Loading your businesses…" /> : null}
 
-          {businesses !== null && businesses.length === 0 ? (
-            <EmptyState title="No businesses yet" description="Add the business you're managing SEO for to get started." />
-          ) : null}
+            {businesses !== null && businesses.length === 0 ? (
+              <EmptyState title="No businesses yet" description={isViewer ? "Your SEO team will add your website here." : "Add the business you're managing SEO for to get started."} />
+            ) : null}
 
-          {businesses?.map((business) => (
-            <Link key={business.id} to={`/businesses/${business.id}/overview`}>
-              <Card className="flex items-center justify-between transition hover:border-primary/40">
-                <div>
-                  <p className="text-sm font-medium text-foreground">{business.name}</p>
-                  <p className="text-sm text-muted">{business.website || "No website added"}</p>
-                </div>
-                <span className="text-sm text-muted">Open workspace →</span>
-              </Card>
-            </Link>
-          ))}
+            {businesses?.map((business) => (
+              <Link key={business.id} to={`/businesses/${business.id}/overview`}>
+                <Card className="flex items-center justify-between transition hover:border-primary/40">
+                  <div>
+                    <p className="text-sm font-medium text-foreground">{business.name}</p>
+                    <p className="text-sm text-muted">{business.website || "No website added"}</p>
+                  </div>
+                  <span className="text-sm text-muted">Open workspace →</span>
+                </Card>
+              </Link>
+            ))}
 
-          {account ? <AddBusinessForm accountId={account.id} onCreated={reloadBusinesses} /> : null}
-        </div>
+            {canAddBusiness && account ? <AddBusinessForm accountId={account.id} onCreated={reloadBusinesses} /> : null}
+          </div>
+        )}
       </main>
     </div>
   );

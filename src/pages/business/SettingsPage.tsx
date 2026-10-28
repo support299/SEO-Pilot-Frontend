@@ -39,6 +39,19 @@ export function SettingsPage() {
 
       <Card>
         <h2 className="text-sm font-semibold">Business profile</h2>
+        {!business.can_edit ? (
+          <dl className="mt-4 space-y-2 text-sm">
+            <div>
+              <dt className="inline font-medium text-foreground">Business: </dt>
+              <dd className="inline text-muted">{business.name}</dd>
+            </div>
+            <div>
+              <dt className="inline font-medium text-foreground">Website: </dt>
+              <dd className="inline text-muted">{business.website || "Not added"}</dd>
+            </div>
+            <p className="pt-1 text-muted">Ask your SEO team if anything here needs to change.</p>
+          </dl>
+        ) : (
         <form onSubmit={onSubmit} className="mt-4 flex max-w-lg flex-col gap-4">
           <Field label="Business name" htmlFor="settings-name">
             <TextInput id="settings-name" required value={values.name} onChange={(e) => setValue("name", e.target.value)} />
@@ -54,6 +67,7 @@ export function SettingsPage() {
             Save changes
           </Button>
         </form>
+        )}
       </Card>
 
       <Card>

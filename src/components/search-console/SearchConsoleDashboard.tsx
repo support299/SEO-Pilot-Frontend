@@ -20,6 +20,7 @@ export function SearchConsoleDashboard({
   onSync,
   isDisconnecting,
   onDisconnect,
+  canEdit,
 }: {
   siteUrl: string;
   lastSyncedAt: string | null;
@@ -34,6 +35,7 @@ export function SearchConsoleDashboard({
   onSync: () => void;
   isDisconnecting: boolean;
   onDisconnect: () => void;
+  canEdit: boolean;
 }) {
   const displayName = siteUrl.replace(/^sc-domain:/, "");
 
@@ -48,12 +50,16 @@ export function SearchConsoleDashboard({
         </div>
         <div className="flex items-center gap-3">
           <DateRangeTabs active={range} onChange={onRangeChange} />
-          <Button variant="secondary" onClick={onSync} loading={isSyncing}>
-            Sync now
-          </Button>
-          <Button variant="danger" onClick={onDisconnect} loading={isDisconnecting}>
-            Disconnect
-          </Button>
+          {canEdit ? (
+            <>
+              <Button variant="secondary" onClick={onSync} loading={isSyncing}>
+                Sync now
+              </Button>
+              <Button variant="danger" onClick={onDisconnect} loading={isDisconnecting}>
+                Disconnect
+              </Button>
+            </>
+          ) : null}
         </div>
       </div>
 

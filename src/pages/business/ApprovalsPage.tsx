@@ -48,13 +48,13 @@ export function ApprovalsPage() {
       ) : null}
 
       {pending.length > 0 ? (
-        <ApprovalGroup label="Needs your decision" approvals={pending} workingId={workingId} onDecide={decide} />
+        <ApprovalGroup label="Needs your decision" approvals={pending} workingId={workingId} onDecide={decide} canEdit={business.can_edit} />
       ) : null}
       {loadState === "loaded" && approvals.length > 0 && pending.length === 0 ? (
         <EmptyState title="No decisions needed" description="Every issue from the latest crawl already has a decision." />
       ) : null}
-      {decided.length > 0 ? <ApprovalGroup label="Decided" approvals={decided} workingId={workingId} onDecide={decide} /> : null}
-      {resolved.length > 0 ? <ApprovalGroup label="No longer in the latest crawl" approvals={resolved} workingId={workingId} onDecide={decide} /> : null}
+      {decided.length > 0 ? <ApprovalGroup label="Decided" approvals={decided} workingId={workingId} onDecide={decide} canEdit={business.can_edit} /> : null}
+      {resolved.length > 0 ? <ApprovalGroup label="No longer in the latest crawl" approvals={resolved} workingId={workingId} onDecide={decide} canEdit={business.can_edit} /> : null}
     </>
   );
 }
@@ -64,11 +64,13 @@ function ApprovalGroup({
   approvals,
   workingId,
   onDecide,
+  canEdit,
 }: {
   label: string;
   approvals: Approval[];
   workingId: number | null;
   onDecide: (approvalId: number, decision: ApprovalDecision) => void;
+  canEdit: boolean;
 }) {
   return (
     <section className="flex flex-col gap-4">
@@ -98,7 +100,8 @@ function ApprovalGroup({
             ) : null}
 
             <div className="mt-4 flex flex-wrap items-center gap-3">
-              {approval.status === "pending" ? (
+              {approval.status === "pending" && !canEdit ? <p className="text-sm text-muted">Waiting for your SEO team to review.</p> : null}
+              {approval.status === "pending" && canEdit ? (
                 <>
                   <Button loading={busy} onClick={() => onDecide(approval.id, "approved")}>
                     Approve
@@ -114,9 +117,11 @@ function ApprovalGroup({
                     {approval.status === "approved" ? "Approved" : "Rejected"}
                     {approval.decided_at ? ` on ${new Date(approval.decided_at).toLocaleDateString("en-US")}` : ""}
                   </p>
-                  <Button variant="secondary" loading={busy} onClick={() => onDecide(approval.id, "pending")}>
-                    Reopen
-                  </Button>
+                  {canEdit ? (
+                    <Button variant="secondary" loading={busy} onClick={() => onDecide(approval.id, "pending")}>
+                      Reopen
+                    </Button>
+                  ) : null}
                 </>
               ) : null}
               {approval.status === "resolved" ? <p className="text-sm text-muted">The latest crawl no longer finds this issue.</p> : null}

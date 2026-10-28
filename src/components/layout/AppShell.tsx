@@ -2,6 +2,7 @@ import { useState, type ReactNode } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
 import { NavIcon } from "@/components/layout/NavIcon";
 import { navTitle, primaryNav, secondaryNav, sectionFromPathname } from "@/components/layout/navConfig";
+import logoStacked from "@/assets/brand/logo-stacked.png";
 import { useAuth } from "@/hooks/useAuth";
 import type { Business } from "@/types/business";
 
@@ -20,16 +21,14 @@ export function AppShell({ business, children }: { business: Business; children:
         ) : null}
 
         <aside
-          className={`fixed inset-y-0 left-0 z-40 flex w-60 shrink-0 flex-col border-r border-border bg-surface transition-transform md:static md:translate-x-0 ${
+          className={`fixed inset-y-0 left-0 z-40 flex w-64 shrink-0 flex-col border-r border-border bg-surface transition-transform md:static md:translate-x-0 ${
             navOpen ? "translate-x-0" : "-translate-x-full"
           }`}
         >
-          <div className="flex items-center gap-2.5 border-b border-border px-4 py-4">
-            <Link to="/" className="flex min-w-0 items-center gap-2.5" onClick={() => setNavOpen(false)}>
-              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-primary text-sm font-semibold text-primary-contrast shadow-[0_7px_18px_rgba(33,64,214,0.22)]">
-                S
-              </span>
-              <span className="truncate font-semibold tracking-[-0.02em]">SEO Pilot</span>
+          <div className="border-b border-border px-4 py-5">
+            <Link to="/" className="flex flex-col items-center" onClick={() => setNavOpen(false)}>
+              <img src={logoStacked} alt="The Service Pilot" className="h-auto w-36" />
+              <span className="mt-3 inline-flex rounded-full bg-success/10 px-2.5 py-1 text-[11px] font-bold uppercase leading-none tracking-[0.14em] text-success">SEO Pilot</span>
             </Link>
           </div>
 
@@ -58,17 +57,21 @@ export function AppShell({ business, children }: { business: Business; children:
                 </button>
                 <div className="min-w-0">
                   <p className="truncate text-sm font-semibold">{navTitle(section)}</p>
-                  <p className="truncate text-xs text-muted">{business.name}</p>
+                  <p className="truncate text-xs text-muted">{business.account_name === business.name ? business.name : `${business.account_name} · ${business.name}`}</p>
                 </div>
               </div>
 
               <div className="flex shrink-0 items-center gap-3">
-                <span className="hidden min-h-9 items-center rounded-full border border-[#abefc6] bg-[#ecfdf3] px-3 text-xs font-semibold text-success sm:inline-flex">
-                  No decisions needed
-                </span>
+                {business.can_edit ? (
+                  <span className="hidden min-h-9 items-center rounded-full border border-[#abefc6] bg-[#ecfdf3] px-3 text-xs font-semibold text-success sm:inline-flex">
+                    No decisions needed
+                  </span>
+                ) : (
+                  <span className="hidden min-h-9 items-center rounded-full border border-border bg-background px-3 text-xs font-semibold text-muted sm:inline-flex">View only</span>
+                )}
                 <span className="hidden text-sm text-muted lg:inline">{user?.email}</span>
                 <Link to="/" className="text-sm font-medium text-muted hover:text-foreground">
-                  Businesses
+                  {user?.is_agency_admin ? "Clients" : "Businesses"}
                 </Link>
                 <button type="button" onClick={() => logout()} className="text-sm font-medium text-muted transition hover:text-foreground">
                   Sign out
@@ -93,13 +96,13 @@ function ShellNavLink({ to, icon, label, onClick }: { to: string; icon: Paramete
       onClick={onClick}
       className={({ isActive }) =>
         `flex min-h-10 items-center gap-2 rounded-lg px-3 text-sm font-semibold transition ${
-          isActive ? "bg-foreground text-white shadow-sm" : "text-muted hover:bg-black/[0.04] hover:text-foreground"
+          isActive ? "bg-primary text-primary-contrast shadow-sm" : "text-muted hover:bg-black/[0.04] hover:text-foreground"
         }`
       }
     >
       {({ isActive }) => (
         <>
-          <span className={isActive ? "text-[#aebcff]" : ""}>
+          <span className={isActive ? "text-white/80" : ""}>
             <NavIcon name={icon} />
           </span>
           {label}

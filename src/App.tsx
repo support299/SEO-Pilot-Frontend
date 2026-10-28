@@ -1,9 +1,12 @@
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { ToastProvider } from "@/components/ui/Toast";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ApprovalsPage } from "@/pages/business/ApprovalsPage";
 import { BusinessIndexRedirect } from "@/pages/business/BusinessIndexRedirect";
 import { ConnectionsPage } from "@/pages/business/ConnectionsPage";
+import { ExecutionPage } from "@/pages/business/ExecutionPage";
+import { LocalVisibilityPage } from "@/pages/business/LocalVisibilityPage";
 import { HistoryPage } from "@/pages/business/HistoryPage";
 import { OpportunitiesPage } from "@/pages/business/OpportunitiesPage";
 import { OverviewPage } from "@/pages/business/OverviewPage";
@@ -22,42 +25,44 @@ export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <Routes>
-          <Route path="/sign-in" element={<SignInPage />} />
-          <Route path="/sign-up" element={<SignUpPage />} />
-          <Route
-            path="/"
-            element={
-              <ProtectedRoute>
-                <DashboardPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/businesses/:id"
-            element={
-              <ProtectedRoute>
-                <BusinessLayout />
-              </ProtectedRoute>
-            }
-          >
-            <Route index element={<BusinessIndexRedirect />} />
-            <Route path="overview" element={<OverviewPage />} />
-            <Route path="performance" element={<PerformancePage />} />
-            <Route path="local-visibility" element={<StubPage copy={stubCopy.localVisibility} />} />
-            <Route path="opportunities" element={<OpportunitiesPage />} />
-            <Route path="pages" element={<PagesPage />} />
-            <Route path="manager" element={<StubPage copy={stubCopy.manager} />} />
-            <Route path="approvals" element={<ApprovalsPage />} />
-            <Route path="site-health" element={<SiteHealthPage />} />
-            <Route path="authority" element={<StubPage copy={stubCopy.authority} />} />
-            <Route path="connections" element={<ConnectionsPage />} />
-            <Route path="work" element={<StubPage copy={stubCopy.work} />} />
-            <Route path="history" element={<HistoryPage />} />
-            <Route path="settings" element={<SettingsPage />} />
-          </Route>
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
+        <ToastProvider>
+          <Routes>
+            <Route path="/sign-in" element={<SignInPage />} />
+            <Route path="/sign-up" element={<SignUpPage />} />
+            <Route
+              path="/"
+              element={
+                <ProtectedRoute>
+                  <DashboardPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/businesses/:id"
+              element={
+                <ProtectedRoute>
+                  <BusinessLayout />
+                </ProtectedRoute>
+              }
+            >
+              <Route index element={<BusinessIndexRedirect />} />
+              <Route path="overview" element={<OverviewPage />} />
+              <Route path="performance" element={<PerformancePage />} />
+              <Route path="local-visibility" element={<LocalVisibilityPage />} />
+              <Route path="opportunities" element={<OpportunitiesPage />} />
+              <Route path="pages" element={<PagesPage />} />
+              <Route path="manager" element={<StubPage copy={stubCopy.manager} />} />
+              <Route path="approvals" element={<ApprovalsPage />} />
+              <Route path="site-health" element={<SiteHealthPage />} />
+              <Route path="authority" element={<StubPage copy={stubCopy.authority} />} />
+              <Route path="connections" element={<ConnectionsPage />} />
+              <Route path="work" element={<ExecutionPage />} />
+              <Route path="history" element={<HistoryPage />} />
+              <Route path="settings" element={<SettingsPage />} />
+            </Route>
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </ToastProvider>
       </AuthProvider>
     </BrowserRouter>
   );

@@ -22,11 +22,4 @@ export const stubCopy = {
     emptyTitle: "Authority data is not connected",
     emptyDescription: "No competitor or listing authority signals are available for {business}.",
   },
-  work: {
-    eyebrow: "Execution",
-    title: "Execution",
-    description: "Verified work and content changes will list here once execution exists.",
-    emptyTitle: "No work in progress",
-    emptyDescription: "There is no execution queue for {business} in this phase.",
-  },
 } satisfies Record<string, StubCopy>;

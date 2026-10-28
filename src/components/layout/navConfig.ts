@@ -32,7 +32,7 @@ export const primaryNav: NavItem[] = [
 ];
 
 export const secondaryNav: NavItem[] = [
-  { path: "authority", label: "Authority", icon: "authority" },
+  // Authority is hidden until a competitor/citation data source exists (route still defined in App.tsx).
   { path: "connections", label: "Connections", icon: "connections" },
   { path: "work", label: "Execution", icon: "execution" },
   { path: "history", label: "History", icon: "history" },

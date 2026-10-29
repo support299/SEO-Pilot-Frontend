@@ -1,4 +1,5 @@
 import { apiClient } from "./apiClient";
+import { isEmbedded, openGooglePopup } from "./googlePopup";
 import type { ConnectionStatus, Overview, TopPage, TopQuery } from "@/types/searchConsole";
 
 async function getStatus(businessId: number): Promise<ConnectionStatus> {
@@ -13,9 +14,12 @@ async function getStatus(businessId: number): Promise<ConnectionStatus> {
  * navigation wouldn't carry the Bearer token the backend needs to identify
  * the business/user.
  */
-async function connect(businessId: number): Promise<void> {
-  const { data } = await apiClient.get<{ url: string }>(`/search-console/${businessId}/authorize-url/`);
+async function connect(businessId: number): Promise<"popup" | "redirect"> {
+  const embedded = isEmbedded();
+  const { data } = await apiClient.get<{ url: string }>(`/search-console/${businessId}/authorize-url/`, { params: embedded ? { popup: 1 } : undefined });
+  if (embedded && openGooglePopup(data.url)) return "popup";
   window.location.href = data.url;
+  return "redirect";
 }
 
 async function sync(businessId: number): Promise<void> {

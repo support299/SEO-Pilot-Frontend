@@ -1,4 +1,5 @@
 import { apiClient } from "./apiClient";
+import { isEmbedded, openGooglePopup } from "./googlePopup";
 import type { AnalyticsConnectionStatus, AnalyticsOverview } from "@/types/analytics";
 
 async function getStatus(businessId: number): Promise<AnalyticsConnectionStatus> {
@@ -6,9 +7,12 @@ async function getStatus(businessId: number): Promise<AnalyticsConnectionStatus>
   return data;
 }
 
-async function connect(businessId: number): Promise<void> {
-  const { data } = await apiClient.get<{ url: string }>(`/analytics/${businessId}/authorize-url/`);
+async function connect(businessId: number): Promise<"popup" | "redirect"> {
+  const embedded = isEmbedded();
+  const { data } = await apiClient.get<{ url: string }>(`/analytics/${businessId}/authorize-url/`, { params: embedded ? { popup: 1 } : undefined });
+  if (embedded && openGooglePopup(data.url)) return "popup";
   window.location.href = data.url;
+  return "redirect";
 }
 
 async function sync(businessId: number): Promise<void> {

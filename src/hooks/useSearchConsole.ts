@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { pollUntil } from "@/api/googlePopup";
 import { searchConsoleService } from "@/api/searchConsoleService";
 import type { ConnectionStatus, Overview, RangeDays, TopPage, TopQuery } from "@/types/searchConsole";
 
@@ -78,7 +79,11 @@ export function useSearchConsole(businessId: number) {
   }, [businessId, range, status?.connected, statusReloadToken]);
 
   async function connect() {
-    await searchConsoleService.connect(businessId); // navigates the browser away — nothing to await here in practice
+    // Normally navigates the browser away. Inside a GoHighLevel iframe it opens a popup instead, so wait for it to finish.
+    const mode = await searchConsoleService.connect(businessId);
+    if (mode === "popup" && (await pollUntil(async () => (await searchConsoleService.getStatus(businessId)).connected))) {
+      setStatusReloadToken((token) => token + 1);
+    }
   }
 
   async function disconnect() {

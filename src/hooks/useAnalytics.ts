@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { analyticsService } from "@/api/analyticsService";
+import { pollUntil } from "@/api/googlePopup";
 import type { AnalyticsConnectionStatus, AnalyticsOverview } from "@/types/analytics";
 import type { RangeDays } from "@/types/searchConsole";
 
@@ -58,7 +59,10 @@ export function useAnalytics(businessId: number, range: RangeDays) {
   }, [businessId, range, status?.connected, reloadToken]);
 
   async function connect() {
-    await analyticsService.connect(businessId);
+    const mode = await analyticsService.connect(businessId);
+    if (mode === "popup" && (await pollUntil(async () => (await analyticsService.getStatus(businessId)).connected))) {
+      setReloadToken((token) => token + 1);
+    }
   }
 
   async function disconnect() {

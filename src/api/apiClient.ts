@@ -21,6 +21,18 @@ export function getAccessToken() {
   return accessToken;
 }
 
+/**
+ * Set when the app was opened from a GoHighLevel menu link. Third-party cookies are often blocked inside
+ * that iframe, so the refresh cookie may not work; this lets the session renew itself from memory only
+ * (never storage, and never left in the address bar).
+ */
+type SsoCredentials = { locationId: string; token: string };
+let ssoCredentials: SsoCredentials | null = null;
+
+export function setSsoCredentials(credentials: SsoCredentials | null) {
+  ssoCredentials = credentials;
+}
+
 export const apiClient = axios.create({
   baseURL: BASE_URL,
   withCredentials: true, // sends/receives the httpOnly refresh cookie on the /auth/* endpoints
@@ -41,6 +53,10 @@ async function refreshAccessToken(): Promise<string> {
   if (!refreshPromise) {
     refreshPromise = axios
       .post<{ access: string }>(`${BASE_URL}/auth/refresh/`, null, { withCredentials: true })
+      .catch((error: unknown) => {
+        if (!ssoCredentials) throw error;
+        return axios.post<{ access: string }>(`${BASE_URL}/auth/sso/`, { location_id: ssoCredentials.locationId, token: ssoCredentials.token }, { withCredentials: true });
+      })
       .then((response) => {
         setAccessToken(response.data.access);
         return response.data.access;
@@ -56,7 +72,7 @@ apiClient.interceptors.response.use(
   (response) => response,
   async (error: AxiosError<ApiErrorBody>) => {
     const originalRequest = error.config as (InternalAxiosRequestConfig & { _retried?: boolean }) | undefined;
-    const isAuthEndpoint = originalRequest?.url?.includes("/auth/login") || originalRequest?.url?.includes("/auth/register") || originalRequest?.url?.includes("/auth/refresh");
+    const isAuthEndpoint = originalRequest?.url?.includes("/auth/login") || originalRequest?.url?.includes("/auth/register") || originalRequest?.url?.includes("/auth/refresh") || originalRequest?.url?.includes("/auth/sso");
 
     if (error.response?.status === 401 && originalRequest && !originalRequest._retried && !isAuthEndpoint) {
       originalRequest._retried = true;

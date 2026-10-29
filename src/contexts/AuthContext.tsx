@@ -3,6 +3,21 @@ import { authService, type LoginInput, type RegisterInput } from "@/api/authServ
 import type { Account, User } from "@/types/auth";
 import { AuthContext } from "./auth-context";
 
+/** If opened from a GoHighLevel menu link, sign in with it and remove the secret from the address bar. */
+async function trySsoFromUrl(): Promise<boolean> {
+  const params = new URLSearchParams(window.location.search);
+  const locationId = params.get("location_id");
+  const token = params.get("sso");
+  if (!locationId || !token) return false;
+
+  params.delete("location_id");
+  params.delete("sso");
+  const query = params.toString();
+  window.history.replaceState(null, "", window.location.pathname + (query ? `?${query}` : "") + window.location.hash);
+
+  return authService.ssoLogin(locationId, token);
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [accounts, setAccounts] = useState<Account[]>([]);
@@ -18,7 +33,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let cancelled = false;
 
     async function bootstrap() {
-      const hasSession = await authService.bootstrapSession();
+      const hasSession = (await trySsoFromUrl()) || (await authService.bootstrapSession());
       if (hasSession) {
         try {
           await loadMe();

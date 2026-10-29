@@ -1,4 +1,4 @@
-import { apiClient, refreshAccessToken, setAccessToken } from "./apiClient";
+import { apiClient, refreshAccessToken, setAccessToken, setSsoCredentials } from "./apiClient";
 import type { Me, User } from "@/types/auth";
 
 export type RegisterInput = { email: string; password: string; full_name?: string };
@@ -16,9 +16,22 @@ async function login(input: LoginInput): Promise<User> {
   return data.user;
 }
 
+/** Sign in from a GoHighLevel menu link (?location_id=…&sso=…). Returns false if the link isn't valid. */
+async function ssoLogin(locationId: string, token: string): Promise<boolean> {
+  try {
+    const { data } = await apiClient.post<{ access: string; user: User }>("/auth/sso/", { location_id: locationId, token });
+    setAccessToken(data.access);
+    setSsoCredentials({ locationId, token });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 async function logout(): Promise<void> {
   await apiClient.post("/auth/logout/");
   setAccessToken(null);
+  setSsoCredentials(null);
 }
 
 async function me(): Promise<Me> {
@@ -36,4 +49,4 @@ async function bootstrapSession(): Promise<boolean> {
   }
 }
 
-export const authService = { register, login, logout, me, bootstrapSession };
+export const authService = { register, login, ssoLogin, logout, me, bootstrapSession };

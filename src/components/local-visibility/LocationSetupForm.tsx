@@ -19,7 +19,12 @@ export function LocationSetupForm({
   const [latitude, setLatitude] = useState(profile ? String(profile.latitude) : "");
   const [longitude, setLongitude] = useState(profile ? String(profile.longitude) : "");
   const [gridSize, setGridSize] = useState(profile?.grid_size ?? 5);
-  const [radius, setRadius] = useState(profile ? String(profile.radius_km) : "5");
+  const initialMiles = profile
+    ? profile.radius_miles !== undefined
+      ? String(profile.radius_miles)
+      : String(Math.round((profile.radius_km / 1.609344) * 10) / 10)
+    : "5";
+  const [radius, setRadius] = useState(initialMiles);
   const [domain, setDomain] = useState(profile?.business_domain ?? "");
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -27,17 +32,24 @@ export function LocationSetupForm({
     event.preventDefault();
     const lat = Number(latitude);
     const lng = Number(longitude);
-    const radiusKm = Number(radius);
+    const radiusMiles = Number(radius);
     if (!latitude.trim() || !longitude.trim() || Number.isNaN(lat) || Number.isNaN(lng)) {
       setFormError("Enter the latitude and longitude of the business, for example 29.7604 and -95.3698.");
       return;
     }
-    if (Number.isNaN(radiusKm) || radiusKm <= 0) {
-      setFormError("Enter how far from the business the grid should reach, in km.");
+    if (Number.isNaN(radiusMiles) || radiusMiles <= 0) {
+      setFormError("Enter how far from the business the grid should reach, in miles.");
       return;
     }
     setFormError(null);
-    const saved = await onSave({ latitude: lat, longitude: lng, grid_size: gridSize, radius_km: radiusKm, business_domain: domain });
+    const saved = await onSave({
+      latitude: lat,
+      longitude: lng,
+      grid_size: gridSize,
+      radius_miles: radiusMiles,
+      radius_km: Math.round(radiusMiles * 1.609344 * 100) / 100,
+      business_domain: domain,
+    });
     if (saved) onCancel?.();
   }
 
@@ -63,7 +75,7 @@ export function LocationSetupForm({
           ))}
         </select>
       </Field>
-      <Field label="Reach (km)" htmlFor="lv-radius" hint="Distance from the business to the edge of the grid.">
+      <Field label="Reach (miles)" htmlFor="lv-radius" hint="Distance from the business to the edge of the grid.">
         <TextInput id="lv-radius" inputMode="decimal" value={radius} onChange={(event) => setRadius(event.target.value)} />
       </Field>
       <div className="sm:col-span-2">

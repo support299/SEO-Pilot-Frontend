@@ -83,7 +83,14 @@ export function DashboardPage() {
               <Link key={business.id} to={`/businesses/${business.id}/overview`}>
                 <Card className="flex items-center justify-between transition hover:border-primary/40">
                   <div>
-                    <p className="text-sm font-medium text-foreground">{business.name}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-medium text-foreground">{business.name}</p>
+                      {business.effective_paused ? (
+                        <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800">
+                          Paused
+                        </span>
+                      ) : null}
+                    </div>
                     <p className="text-sm text-muted">{business.website || "No website added"}</p>
                   </div>
                   <span className="text-sm text-muted">Open workspace →</span>

@@ -64,6 +64,11 @@ export function AppShell({ business, children }: { business: Business; children:
               </div>
 
               <div className="flex shrink-0 items-center gap-3">
+                {business.effective_paused ? (
+                  <span className="hidden min-h-9 items-center rounded-full border border-amber-300 bg-amber-50 px-3 text-xs font-semibold text-amber-800 sm:inline-flex">
+                    Paused
+                  </span>
+                ) : null}
                 {business.can_edit ? (
                   pendingDecisions > 0 ? (
                     <Link
@@ -90,6 +95,23 @@ export function AppShell({ business, children }: { business: Business; children:
               </div>
             </div>
           </header>
+
+          {business.effective_paused ? (
+            <div className="border-b border-amber-200 bg-amber-50/90 px-4 py-2 text-xs text-amber-900 sm:px-6">
+              <div className="mx-auto flex max-w-[1580px] items-center justify-between gap-2">
+                <span>
+                  {business.is_account_paused
+                    ? `Workspace paused: Client account "${business.account_name}" has been paused by the agency. Scheduled crawls, scans, and syncs are on hold.`
+                    : "Workspace paused: Scheduled crawls, scans, and syncs are currently on hold for this website."}
+                </span>
+                {business.can_edit ? (
+                  <Link to={`${base}/settings`} className="shrink-0 font-semibold underline hover:text-amber-950">
+                    Manage in Settings →
+                  </Link>
+                ) : null}
+              </div>
+            </div>
+          ) : null}
 
           <main className="min-w-0 flex-1">
             <div className="mx-auto flex w-full max-w-[1580px] flex-col gap-6 px-4 py-6 sm:px-6 sm:py-8 lg:px-8">{children}</div>

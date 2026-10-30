@@ -17,6 +17,7 @@ export function PerformancePage() {
   const sc = useSearchConsole(business.id);
 
   const scError = searchParams.get("scError");
+  const scMessage = searchParams.get("scMessage");
   const scConnected = searchParams.get("scConnected");
 
   return (
@@ -27,7 +28,7 @@ export function PerformancePage() {
         description={`Observed Google Search Console data for ${business.name}. Empty until a property is connected.`}
       />
 
-      {scError ? <ErrorText>{SC_ERROR_MESSAGES[scError] ?? "Something went wrong."}</ErrorText> : null}
+      {scError ? <ErrorText>{scMessage ?? SC_ERROR_MESSAGES[scError] ?? "Something went wrong."}</ErrorText> : null}
       {scConnected ? <SuccessText>Google Search Console connected. Syncing your first data now…</SuccessText> : null}
 
       {sc.statusState === "loading" || sc.statusState === "idle" ? <LoadingState label="Checking Search Console connection…" /> : null}

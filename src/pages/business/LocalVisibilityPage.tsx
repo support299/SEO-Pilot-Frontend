@@ -81,7 +81,7 @@ export function LocalVisibilityPage() {
               <div>
                 <h2 className="text-sm font-semibold">Keywords</h2>
                 <p className="mt-1 text-xs text-muted">
-                  {overview.profile.grid_size}×{overview.profile.grid_size} grid, {overview.profile.radius_km} km reach · looking for {overview.profile.matching_domain || "no website set"}
+                  {overview.profile.grid_size}×{overview.profile.grid_size} grid, {overview.profile.radius_miles ?? Math.round((overview.profile.radius_km / 1.609344) * 10) / 10} miles reach · looking for {overview.profile.matching_domain || "no website set"}
                   {business.can_edit ? ` · ${overview.limits.scans_today}/${overview.limits.scans_per_day} scans used today` : ""}
                 </p>
               </div>
@@ -167,7 +167,15 @@ export function LocalVisibilityPage() {
               {lv.detail.scanning ? <LoadingState label="Scanning the grid… this takes about a minute." /> : null}
               {lv.detail.scan?.error ? <p className="mb-3 text-xs text-muted">{lv.detail.scan.error}</p> : null}
               {lv.detail.scan ? (
-                <GridMap points={lv.detail.scan.points} size={lv.detail.scan.grid_size} radiusKm={lv.detail.scan.radius_km} />
+                <GridMap
+                  points={lv.detail.scan.points}
+                  size={lv.detail.scan.grid_size}
+                  radiusMiles={lv.detail.scan.radius_miles}
+                  radiusKm={lv.detail.scan.radius_km}
+                  centerLatitude={lv.detail.scan.center_latitude}
+                  centerLongitude={lv.detail.scan.center_longitude}
+                  businessName={business.name}
+                />
               ) : !lv.detail.scanning ? (
                 <EmptyState
                   title="No scan yet"

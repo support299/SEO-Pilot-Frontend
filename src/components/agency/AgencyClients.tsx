@@ -4,6 +4,7 @@ import { agencyService, type AgencyClient } from "@/api/agencyService";
 import { businessService } from "@/api/businessService";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { EmptyState, ErrorText, LoadingState } from "@/components/ui/Feedback";
 import { Field, TextInput } from "@/components/ui/Field";
 import { useForm } from "@/hooks/useForm";
@@ -39,53 +40,203 @@ export function AgencyClients() {
 }
 
 function ClientCard({ client, onChanged }: { client: AgencyClient; onChanged: () => void }) {
+  const toast = useToast();
   const [adding, setAdding] = useState(false);
+  const [togglingClient, setTogglingClient] = useState(false);
+  const [confirmDeleteClient, setConfirmDeleteClient] = useState(false);
+  const [isDeletingClient, setIsDeletingClient] = useState(false);
+
+  const [togglingBusinessId, setTogglingBusinessId] = useState<number | null>(null);
+  const [businessToDelete, setBusinessToDelete] = useState<{ id: number; name: string } | null>(null);
+  const [isDeletingBusiness, setIsDeletingBusiness] = useState(false);
+
   const logins = client.members.map((member) => member.email);
 
+  async function handleToggleClientPause() {
+    setTogglingClient(true);
+    try {
+      const nextPaused = !client.is_paused;
+      await agencyService.updateCustomer(client.id, { is_paused: nextPaused });
+      toast.show("success", nextPaused ? `"${client.name}" has been paused.` : `"${client.name}" has been resumed.`);
+      onChanged();
+    } catch {
+      toast.show("error", "Failed to update client status. Please try again.");
+    } finally {
+      setTogglingClient(false);
+    }
+  }
+
+  async function handleDeleteClient() {
+    setIsDeletingClient(true);
+    try {
+      await agencyService.deleteCustomer(client.id);
+      toast.show("success", `Client "${client.name}" deleted.`);
+      setConfirmDeleteClient(false);
+      onChanged();
+    } catch {
+      toast.show("error", "Failed to delete client. Please try again.");
+    } finally {
+      setIsDeletingClient(false);
+    }
+  }
+
+  async function handleToggleBusinessPause(business: { id: number; name: string; is_paused: boolean }) {
+    setTogglingBusinessId(business.id);
+    try {
+      const nextPaused = !business.is_paused;
+      await businessService.update(business.id, { is_paused: nextPaused });
+      toast.show("success", nextPaused ? `"${business.name}" has been paused.` : `"${business.name}" has been resumed.`);
+      onChanged();
+    } catch {
+      toast.show("error", "Failed to update website status. Please try again.");
+    } finally {
+      setTogglingBusinessId(null);
+    }
+  }
+
+  async function handleDeleteBusiness() {
+    if (!businessToDelete) return;
+    setIsDeletingBusiness(true);
+    try {
+      await businessService.remove(businessToDelete.id);
+      toast.show("success", `Website "${businessToDelete.name}" deleted.`);
+      setBusinessToDelete(null);
+      onChanged();
+    } catch {
+      toast.show("error", "Failed to delete website. Please try again.");
+    } finally {
+      setIsDeletingBusiness(false);
+    }
+  }
+
   return (
-    <Card>
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="min-w-0">
-          <h2 className="truncate text-base font-semibold text-foreground">{client.name}</h2>
-          <p className="mt-0.5 text-xs text-muted">
-            {client.businesses.length} {client.businesses.length === 1 ? "website" : "websites"}
-            {logins.length > 0 ? ` · Login: ${logins.join(", ")}` : " · No client login"}
-          </p>
+    <>
+      <Card>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <h2 className="truncate text-base font-semibold text-foreground">{client.name}</h2>
+              {client.is_paused ? (
+                <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800">
+                  Paused
+                </span>
+              ) : null}
+            </div>
+            <p className="mt-0.5 text-xs text-muted">
+              {client.businesses.length} {client.businesses.length === 1 ? "website" : "websites"}
+              {logins.length > 0 ? ` · Login: ${logins.join(", ")}` : " · No client login"}
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            {!adding ? (
+              <Button variant="secondary" onClick={() => setAdding(true)}>
+                + Add website
+              </Button>
+            ) : null}
+            <Button
+              variant="secondary"
+              disabled={togglingClient}
+              loading={togglingClient}
+              onClick={handleToggleClientPause}
+              className={client.is_paused ? "text-amber-800 hover:bg-amber-50" : ""}
+            >
+              {client.is_paused ? "Resume client" : "Pause client"}
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={() => setConfirmDeleteClient(true)}
+              className="text-danger hover:border-danger/30 hover:bg-danger/5"
+            >
+              Delete client
+            </Button>
+          </div>
         </div>
-        {!adding ? (
-          <Button variant="secondary" onClick={() => setAdding(true)}>
-            + Add website
-          </Button>
-        ) : null}
-      </div>
 
-      <ul className="mt-4 divide-y divide-border rounded-lg border border-border">
-        {client.businesses.length === 0 ? <li className="px-4 py-3 text-sm text-muted">No websites yet.</li> : null}
-        {client.businesses.map((business) => (
-          <li key={business.id}>
-            <Link to={`/businesses/${business.id}/overview`} className="flex items-center justify-between gap-3 px-4 py-3 transition hover:bg-black/[0.02]">
-              <div className="min-w-0">
-                <p className="truncate text-sm font-medium text-foreground">{business.name}</p>
+        <ul className="mt-4 divide-y divide-border rounded-lg border border-border">
+          {client.businesses.length === 0 ? <li className="px-4 py-3 text-sm text-muted">No websites yet.</li> : null}
+          {client.businesses.map((business) => (
+            <li key={business.id} className="flex items-center justify-between gap-3 px-4 py-3 transition hover:bg-black/[0.01]">
+              <Link to={`/businesses/${business.id}/overview`} className="group min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <p className="truncate text-sm font-medium text-foreground group-hover:text-primary">{business.name}</p>
+                  {business.is_paused ? (
+                    <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-800">
+                      Paused
+                    </span>
+                  ) : null}
+                </div>
                 <p className="truncate text-xs text-muted">{business.website || "No website added"}</p>
+              </Link>
+              <div className="flex shrink-0 items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => handleToggleBusinessPause(business)}
+                  disabled={togglingBusinessId === business.id}
+                  className="text-xs font-medium text-muted hover:text-foreground transition disabled:opacity-50"
+                >
+                  {business.is_paused ? "Resume" : "Pause"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setBusinessToDelete(business)}
+                  className="text-xs font-medium text-muted hover:text-danger transition"
+                >
+                  Delete
+                </button>
+                <Link to={`/businesses/${business.id}/overview`} className="text-sm font-medium text-primary hover:underline">
+                  Open workspace →
+                </Link>
               </div>
-              <span className="shrink-0 text-sm text-primary">Open workspace →</span>
-            </Link>
-          </li>
-        ))}
-      </ul>
+            </li>
+          ))}
+        </ul>
 
-      {adding ? (
-        <AddWebsiteForm
-          accountId={client.id}
-          clientName={client.name}
-          onDone={() => setAdding(false)}
-          onAdded={() => {
-            setAdding(false);
-            onChanged();
-          }}
-        />
-      ) : null}
-    </Card>
+        {adding ? (
+          <AddWebsiteForm
+            accountId={client.id}
+            clientName={client.name}
+            onDone={() => setAdding(false)}
+            onAdded={() => {
+              setAdding(false);
+              onChanged();
+            }}
+          />
+        ) : null}
+      </Card>
+
+      <ConfirmModal
+        isOpen={confirmDeleteClient}
+        title={`Delete client "${client.name}"?`}
+        description={
+          <>
+            Are you sure you want to delete <strong>{client.name}</strong>? This will permanently delete the client account,
+            all {client.businesses.length} website workspace{client.businesses.length === 1 ? "" : "s"}, crawl data, audit
+            history, and client login access. This action cannot be undone.
+          </>
+        }
+        confirmLabel="Delete client"
+        confirmVariant="danger"
+        isLoading={isDeletingClient}
+        onConfirm={handleDeleteClient}
+        onCancel={() => setConfirmDeleteClient(false)}
+      />
+
+      <ConfirmModal
+        isOpen={businessToDelete !== null}
+        title={`Delete website "${businessToDelete?.name}"?`}
+        description={
+          <>
+            Are you sure you want to delete the workspace for <strong>{businessToDelete?.name}</strong>? This will permanently
+            remove all crawl audits, rank tracking data, and connections. This action cannot be undone.
+          </>
+        }
+        confirmLabel="Delete website"
+        confirmVariant="danger"
+        isLoading={isDeletingBusiness}
+        onConfirm={handleDeleteBusiness}
+        onCancel={() => setBusinessToDelete(null)}
+      />
+    </>
   );
 }
 

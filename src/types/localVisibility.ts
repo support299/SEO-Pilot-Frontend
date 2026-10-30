@@ -3,6 +3,7 @@ export type LocalProfile = {
   longitude: number;
   grid_size: number;
   radius_km: number;
+  radius_miles?: number;
   business_domain: string;
   place_id: string;
   matching_domain: string;
@@ -68,6 +69,7 @@ export type KeywordDetail = {
     | (ScanSummary & {
         grid_size: number;
         radius_km: number;
+        radius_miles?: number;
         center_latitude: number;
         center_longitude: number;
         points: GridPoint[];
@@ -81,6 +83,7 @@ export type ProfileInput = {
   latitude: number;
   longitude: number;
   grid_size: number;
-  radius_km: number;
+  radius_miles?: number;
+  radius_km?: number;
   business_domain?: string;
 };

@@ -16,9 +16,13 @@ async function create(input: { account: number; name: string; website?: string }
   return data;
 }
 
-async function update(id: number, input: Partial<Pick<Business, "name" | "website">>): Promise<Business> {
+async function update(id: number, input: Partial<Pick<Business, "name" | "website" | "is_paused">>): Promise<Business> {
   const { data } = await apiClient.patch<Business>(`/businesses/${id}/`, input);
   return data;
 }
 
-export const businessService = { list, get, create, update };
+async function remove(id: number): Promise<void> {
+  await apiClient.delete(`/businesses/${id}/`);
+}
+
+export const businessService = { list, get, create, update, remove };

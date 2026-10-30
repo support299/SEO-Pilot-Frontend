@@ -17,8 +17,9 @@ export type CreatedCustomer = {
 export type AgencyClient = {
   id: number;
   name: string;
+  is_paused: boolean;
   created_at: string;
-  businesses: { id: number; name: string; website: string | null }[];
+  businesses: { id: number; name: string; website: string | null; is_paused: boolean; effective_paused: boolean }[];
   members: { email: string; role: string }[];
 };
 
@@ -32,4 +33,13 @@ async function createCustomer(input: CustomerInput): Promise<CreatedCustomer> {
   return data;
 }
 
-export const agencyService = { listClients, createCustomer };
+async function updateCustomer(id: number, input: { name?: string; is_paused?: boolean }): Promise<AgencyClient> {
+  const { data } = await apiClient.patch<AgencyClient>(`/agency/customers/${id}/`, input);
+  return data;
+}
+
+async function deleteCustomer(id: number): Promise<void> {
+  await apiClient.delete(`/agency/customers/${id}/`);
+}
+
+export const agencyService = { listClients, createCustomer, updateCustomer, deleteCustomer };

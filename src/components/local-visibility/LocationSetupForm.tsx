@@ -1,15 +1,29 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/Button";
 import { Field, TextInput } from "@/components/ui/Field";
-import type { LocalProfile, ProfileInput } from "@/types/localVisibility";
+import { localVisibilityService } from "@/api/localVisibilityService";
+import { placesKeyConfigured, searchPlaces } from "@/api/placesService";
+import type { LocalProfile, PlaceResult, ProfileInput } from "@/types/localVisibility";
+
+function domainOf(url: string) {
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return "";
+  }
+}
 
 export function LocationSetupForm({
+  businessId,
+  businessName,
   profile,
   gridSizes,
   busy,
   onSave,
   onCancel,
 }: {
+  businessId: number;
+  businessName: string;
   profile: LocalProfile | null;
   gridSizes: number[];
   busy: boolean;
@@ -27,6 +41,53 @@ export function LocationSetupForm({
   const [radius, setRadius] = useState(initialMiles);
   const [domain, setDomain] = useState(profile?.business_domain ?? "");
   const [formError, setFormError] = useState<string | null>(null);
+  const [query, setQuery] = useState(businessName);
+  const [results, setResults] = useState<PlaceResult[] | null>(null);
+  const [searching, setSearching] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
+  const [picked, setPicked] = useState<PlaceResult | null>(null);
+  const [manual, setManual] = useState(false);
+  const [typed, setTyped] = useState(false);
+
+  async function runSearch(text: string, signal?: AbortSignal) {
+    setSearching(true);
+    setSearchError(null);
+    try {
+      setResults(placesKeyConfigured ? await searchPlaces(text, signal) : await localVisibilityService.searchPlaces(businessId, text));
+    } catch (error) {
+      if (signal?.aborted) return;
+      setSearchError(error instanceof Error && error.message ? error.message : "Couldn't look that up right now. You can enter the coordinates manually instead.");
+      setResults(null);
+    } finally {
+      if (!signal?.aborted) setSearching(false);
+    }
+  }
+
+  // Search as you type, once the text has settled. Picking a result sets `picked`, which pauses this until the text changes again.
+  useEffect(() => {
+    const text = query.trim();
+    if (!typed || text.length < 3 || (picked && text === picked.name)) {
+      setResults(null);
+      return;
+    }
+    const controller = new AbortController();
+    const timer = setTimeout(() => runSearch(text, controller.signal), 500);
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
+    // oxlint-disable-next-line react-hooks/exhaustive-deps
+  }, [query]);
+
+  function pickPlace(place: PlaceResult) {
+    setPicked(place);
+    setQuery(place.name);
+    setLatitude(String(place.latitude));
+    setLongitude(String(place.longitude));
+    const website = domainOf(place.website);
+    if (website && !domain.trim()) setDomain(website);
+    setResults(null);
+  }
 
   async function submit(event: FormEvent) {
     event.preventDefault();
@@ -34,7 +95,7 @@ export function LocationSetupForm({
     const lng = Number(longitude);
     const radiusMiles = Number(radius);
     if (!latitude.trim() || !longitude.trim() || Number.isNaN(lat) || Number.isNaN(lng)) {
-      setFormError("Enter the latitude and longitude of the business, for example 29.7604 and -95.3698.");
+      setFormError("Find the business above first, or enter its latitude and longitude manually.");
       return;
     }
     if (Number.isNaN(radiusMiles) || radiusMiles <= 0) {
@@ -55,12 +116,57 @@ export function LocationSetupForm({
 
   return (
     <form onSubmit={submit} className="grid gap-4 sm:grid-cols-2">
-      <Field label="Latitude" htmlFor="lv-lat" hint="In Google Maps, right-click the business pin and click the numbers to copy them.">
-        <TextInput id="lv-lat" inputMode="decimal" value={latitude} onChange={(event) => setLatitude(event.target.value)} placeholder="29.7604" />
-      </Field>
-      <Field label="Longitude" htmlFor="lv-lng">
-        <TextInput id="lv-lng" inputMode="decimal" value={longitude} onChange={(event) => setLongitude(event.target.value)} placeholder="-95.3698" />
-      </Field>
+      <div className="sm:col-span-2">
+        <Field label="Find the business" htmlFor="lv-place" hint="Start typing the business name and city, or a street address. Pick a result and we'll fill in the map position.">
+          <div className="flex gap-2">
+            <TextInput
+              id="lv-place"
+              value={query}
+              onChange={(event) => {
+                setTyped(true);
+                setQuery(event.target.value);
+              }}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") event.preventDefault();
+              }}
+              placeholder="Trushine Window Cleaning, Houston TX"
+            />
+            {searching ? <span className="shrink-0 self-center text-xs text-muted">Searching…</span> : null}
+          </div>
+        </Field>
+        {searchError ? <p className="mt-2 text-sm text-danger">{searchError}</p> : null}
+        {results && results.length === 0 ? <p className="mt-2 text-sm text-muted">No places found. Try adding the city, or enter coordinates manually below.</p> : null}
+        {results && results.length > 0 ? (
+          <ul className="mt-2 divide-y divide-border rounded-lg border border-border">
+            {results.map((place) => (
+              <li key={place.place_id}>
+                <button type="button" onClick={() => pickPlace(place)} className="w-full px-4 py-2.5 text-left transition hover:bg-black/[0.03]">
+                  <p className="text-sm font-medium text-foreground">{place.name}</p>
+                  <p className="text-xs text-muted">{place.address}</p>
+                </button>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+        {picked ? (
+          <p className="mt-2 text-sm text-foreground">
+            Selected: <strong>{picked.name}</strong> · {picked.address}
+          </p>
+        ) : null}
+        <button type="button" onClick={() => setManual(!manual)} className="mt-2 text-xs font-medium text-primary hover:underline">
+          {manual ? "Hide coordinates" : latitude && longitude ? "Edit coordinates" : "Enter coordinates manually"}
+        </button>
+      </div>
+      {manual ? (
+        <>
+          <Field label="Latitude" htmlFor="lv-lat">
+            <TextInput id="lv-lat" inputMode="decimal" value={latitude} onChange={(event) => setLatitude(event.target.value)} placeholder="29.7604" />
+          </Field>
+          <Field label="Longitude" htmlFor="lv-lng">
+            <TextInput id="lv-lng" inputMode="decimal" value={longitude} onChange={(event) => setLongitude(event.target.value)} placeholder="-95.3698" />
+          </Field>
+        </>
+      ) : null}
       <Field label="Grid size" htmlFor="lv-size" hint="A bigger grid checks more spots, so a scan costs more.">
         <select
           id="lv-size"

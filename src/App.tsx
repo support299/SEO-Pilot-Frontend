@@ -12,6 +12,9 @@ import { HistoryPage } from "@/pages/business/HistoryPage";
 import { OpportunitiesPage } from "@/pages/business/OpportunitiesPage";
 import { OverviewPage } from "@/pages/business/OverviewPage";
 import { PagesPage } from "@/pages/business/PagesPage";
+import { ChecklistPage } from "@/pages/business/ChecklistPage";
+import { WorkPlanPage } from "@/pages/business/WorkPlanPage";
+import { PlanPage } from "@/pages/business/PlanPage";
 import { PerformancePage } from "@/pages/business/PerformancePage";
 import { SettingsPage } from "@/pages/business/SettingsPage";
 import { SiteHealthPage } from "@/pages/business/SiteHealthPage";
@@ -59,6 +62,9 @@ export default function App() {
               <Route path="connections" element={<ConnectionsPage />} />
               <Route path="work" element={<ExecutionPage />} />
               <Route path="history" element={<HistoryPage />} />
+              <Route path="work-plan" element={<WorkPlanPage />} />
+              <Route path="checklist" element={<ChecklistPage />} />
+              <Route path="plan" element={<PlanPage />} />
               <Route path="settings" element={<SettingsPage />} />
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />

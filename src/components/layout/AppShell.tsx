@@ -13,7 +13,7 @@ export function AppShell({ business, children }: { business: Business; children:
   const section = sectionFromPathname(pathname);
   const base = `/businesses/${business.id}`;
   const [navOpen, setNavOpen] = useState(false);
-  const pendingDecisions = usePendingDecisions(business.id, pathname);
+  const { count: pendingDecisions, section: pendingSection } = usePendingDecisions(business.id, pathname);
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -72,7 +72,7 @@ export function AppShell({ business, children }: { business: Business; children:
                 {business.can_edit ? (
                   pendingDecisions > 0 ? (
                     <Link
-                      to={`${base}/approvals`}
+                      to={`${base}/${pendingSection}`}
                       className="hidden min-h-9 items-center rounded-full border border-primary/30 bg-primary/10 px-3 text-xs font-semibold text-primary sm:inline-flex"
                     >
                       {pendingDecisions} {pendingDecisions === 1 ? "decision" : "decisions"} needed

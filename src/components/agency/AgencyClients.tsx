@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { agencyService, type AgencyClient } from "@/api/agencyService";
 import { businessService } from "@/api/businessService";
+import { planService } from "@/api/planService";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
@@ -9,11 +10,13 @@ import { EmptyState, ErrorText, LoadingState } from "@/components/ui/Feedback";
 import { Field, TextInput } from "@/components/ui/Field";
 import { useForm } from "@/hooks/useForm";
 import { useToast } from "@/hooks/useToast";
+import { PACKAGE_OPTIONS, type PackageKey } from "@/types/plan";
 
 /** Agency admin home: every client, each with its own websites. Every website is a separate workspace. */
 export function AgencyClients() {
   const [clients, setClients] = useState<AgencyClient[] | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [query, setQuery] = useState("");
 
   const reload = useCallback(() => {
     agencyService.listClients().then(setClients, () => setLoadError("Couldn't load clients right now."));
@@ -24,14 +27,28 @@ export function AgencyClients() {
     reload();
   }, [reload]);
 
+  const needle = query.trim().toLowerCase();
+  const visibleClients = clients?.filter((client) => !needle || clientMatches(client, needle));
+
   return (
     <div className="mt-6 flex flex-col gap-4">
+      {clients && clients.length > 1 ? (
+        <TextInput
+          type="search"
+          aria-label="Search clients"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search by client, website name, URL or login email"
+        />
+      ) : null}
       {loadError ? <ErrorText>{loadError}</ErrorText> : null}
       {clients === null && !loadError ? <LoadingState label="Loading clients…" /> : null}
       {clients?.length === 0 ? <EmptyState title="No clients yet" description="Add your first client below, then add each of their websites." /> : null}
 
-      {clients?.map((client) => (
-        <ClientCard key={client.id} client={client} onChanged={reload} />
+      {needle && visibleClients?.length === 0 ? <EmptyState title="No matching clients" description={`Nothing matches "${query.trim()}".`} /> : null}
+
+      {visibleClients?.map((client) => (
+        <ClientCard key={client.id} client={client} onChanged={reload} forceOpen={needle !== ""} />
       ))}
 
       <AddClientForm onCreated={reload} />
@@ -39,8 +56,16 @@ export function AgencyClients() {
   );
 }
 
-function ClientCard({ client, onChanged }: { client: AgencyClient; onChanged: () => void }) {
+function clientMatches(client: AgencyClient, needle: string) {
+  const haystack = [client.name, ...client.members.map((m) => m.email), ...client.businesses.flatMap((b) => [b.name, b.website ?? ""])];
+  return haystack.some((value) => value.toLowerCase().includes(needle));
+}
+
+function ClientCard({ client, onChanged, forceOpen }: { client: AgencyClient; onChanged: () => void; forceOpen: boolean }) {
   const toast = useToast();
+  const [collapsed, setCollapsed] = useState(false);
+  const collapsible = client.businesses.length > 1;
+  const open = forceOpen || !collapsible || !collapsed;
   const [adding, setAdding] = useState(false);
   const [togglingClient, setTogglingClient] = useState(false);
   const [confirmDeleteClient, setConfirmDeleteClient] = useState(false);
@@ -94,6 +119,16 @@ function ClientCard({ client, onChanged }: { client: AgencyClient; onChanged: ()
     }
   }
 
+  async function handleChangePackage(business: { id: number; name: string }, pkg: PackageKey) {
+    try {
+      const plan = await planService.setPackage(business.id, pkg);
+      toast.show("success", `"${business.name}" is now on ${plan.package_label}.`);
+      onChanged();
+    } catch {
+      toast.show("error", "Failed to change the package. Please try again.");
+    }
+  }
+
   async function handleDeleteBusiness() {
     if (!businessToDelete) return;
     setIsDeletingBusiness(true);
@@ -115,6 +150,19 @@ function ClientCard({ client, onChanged }: { client: AgencyClient; onChanged: ()
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
             <div className="flex items-center gap-2">
+              {collapsible ? (
+                <button
+                  type="button"
+                  onClick={() => setCollapsed(!collapsed)}
+                  aria-expanded={open}
+                  aria-label={open ? `Collapse ${client.name}` : `Expand ${client.name}`}
+                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-border text-muted transition hover:bg-black/5 hover:text-foreground"
+                >
+                  <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`h-4 w-4 transition-transform ${open ? "rotate-90" : ""}`}>
+                    <path d="M7 4l6 6-6 6" />
+                  </svg>
+                </button>
+              ) : null}
               <h2 className="truncate text-base font-semibold text-foreground">{client.name}</h2>
               {client.is_paused ? (
                 <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800">
@@ -128,7 +176,12 @@ function ClientCard({ client, onChanged }: { client: AgencyClient; onChanged: ()
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            {!adding ? (
+            {collapsible && !forceOpen ? (
+              <Button variant="secondary" onClick={() => setCollapsed(!collapsed)}>
+                {open ? "Hide websites" : `Show ${client.businesses.length} websites`}
+              </Button>
+            ) : null}
+            {!adding && open ? (
               <Button variant="secondary" onClick={() => setAdding(true)}>
                 + Add website
               </Button>
@@ -152,6 +205,8 @@ function ClientCard({ client, onChanged }: { client: AgencyClient; onChanged: ()
           </div>
         </div>
 
+        {open ? (
+        <>
         <ul className="mt-4 divide-y divide-border rounded-lg border border-border">
           {client.businesses.length === 0 ? <li className="px-4 py-3 text-sm text-muted">No websites yet.</li> : null}
           {client.businesses.map((business) => (
@@ -168,6 +223,12 @@ function ClientCard({ client, onChanged }: { client: AgencyClient; onChanged: ()
                 <p className="truncate text-xs text-muted">{business.website || "No website added"}</p>
               </Link>
               <div className="flex shrink-0 items-center gap-3">
+                <PackageSelect
+                  value={business.package}
+                  status={business.subscription_status}
+                  label={`Package for ${business.name}`}
+                  onChange={(pkg) => handleChangePackage(business, pkg)}
+                />
                 <button
                   type="button"
                   onClick={() => handleToggleBusinessPause(business)}
@@ -201,6 +262,8 @@ function ClientCard({ client, onChanged }: { client: AgencyClient; onChanged: ()
               onChanged();
             }}
           />
+        ) : null}
+        </>
         ) : null}
       </Card>
 
@@ -242,12 +305,13 @@ function ClientCard({ client, onChanged }: { client: AgencyClient; onChanged: ()
 
 function AddWebsiteForm({ accountId, clientName, onAdded, onDone }: { accountId: number; clientName: string; onAdded: () => void; onDone: () => void }) {
   const toast = useToast();
-  const { values, setValue, fieldErrors, formError, isSubmitting, handleSubmit } = useForm({ name: "", website: "" });
+  const { values, setValue, fieldErrors, formError, isSubmitting, handleSubmit } = useForm({ name: "", website: "", package: "" });
 
   function onSubmit(event: React.FormEvent) {
     event.preventDefault();
     handleSubmit(async (v) => {
       const business = await businessService.create({ account: accountId, name: v.name.trim(), website: v.website.trim() || undefined });
+      if (v.package) await planService.setPackage(business.id, v.package as PackageKey);
       toast.show("success", `${business.name} added to ${clientName}.`);
       onAdded();
     });
@@ -264,6 +328,9 @@ function AddWebsiteForm({ accountId, clientName, onAdded, onDone }: { accountId:
         <TextInput id={`site-url-${accountId}`} value={values.website} onChange={(e) => setValue("website", e.target.value)} placeholder="acmehvac.com" />
         <ErrorText>{fieldErrors.website}</ErrorText>
       </Field>
+      <Field label="Package" htmlFor={`site-package-${accountId}`} hint="Each website needs its own paid package. Leave empty if it hasn't paid yet.">
+        <PackageSelect id={`site-package-${accountId}`} value={(values.package as PackageKey) || null} onChange={(pkg) => setValue("package", pkg)} />
+      </Field>
       <ErrorText>{formError}</ErrorText>
       <div className="flex gap-3">
         <Button type="submit" loading={isSubmitting} loadingText="Adding…" disabled={!values.name.trim()}>
@@ -279,7 +346,7 @@ function AddWebsiteForm({ accountId, clientName, onAdded, onDone }: { accountId:
 
 function AddClientForm({ onCreated }: { onCreated: () => void }) {
   const toast = useToast();
-  const { values, setValue, fieldErrors, formError, isSubmitting, handleSubmit } = useForm({ customer_name: "", website: "", email: "", password: "" });
+  const { values, setValue, fieldErrors, formError, isSubmitting, handleSubmit } = useForm({ customer_name: "", website: "", email: "", password: "", package: "" });
 
   function onSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -289,12 +356,14 @@ function AddClientForm({ onCreated }: { onCreated: () => void }) {
         website: v.website.trim() || undefined,
         email: v.email.trim() || undefined,
         password: v.password || undefined,
+        package: (v.package as PackageKey) || undefined,
       });
       toast.show("success", result.login_email ? `${result.account.name} added. Client login: ${result.login_email} (view only).` : `${result.account.name} added.`);
       setValue("customer_name", "");
       setValue("website", "");
       setValue("email", "");
       setValue("password", "");
+      setValue("package", "");
       onCreated();
     });
   }
@@ -312,6 +381,9 @@ function AddClientForm({ onCreated }: { onCreated: () => void }) {
           <TextInput id="client_website" value={values.website} onChange={(e) => setValue("website", e.target.value)} placeholder="acmegroup.com" />
           <ErrorText>{fieldErrors.website}</ErrorText>
         </Field>
+        <Field label="Package" htmlFor="client_package" hint="The package the client paid for on the ServicePilot site, for the first website.">
+          <PackageSelect id="client_package" value={(values.package as PackageKey) || null} onChange={(pkg) => setValue("package", pkg)} />
+        </Field>
         <Field label="Client login email" htmlFor="client_email" hint="Optional. Gives the client view-only access to all of their websites.">
           <TextInput id="client_email" type="email" value={values.email} onChange={(e) => setValue("email", e.target.value)} placeholder="owner@acmegroup.com" />
           <ErrorText>{fieldErrors.email}</ErrorText>
@@ -328,5 +400,23 @@ function AddClientForm({ onCreated }: { onCreated: () => void }) {
         </Button>
       </form>
     </Card>
+  );
+}
+
+const selectClass = "rounded-lg border border-border bg-surface px-2.5 py-1.5 text-xs text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/15";
+
+/** Package dropdown. With no value it reads "No package", so a website that hasn't paid never looks like it has one. */
+function PackageSelect({ value, status, label, id, onChange }: { value: PackageKey | null; status?: string; label?: string; id?: string; onChange: (pkg: PackageKey) => void }) {
+  const inactive = value && status && status !== "active";
+  return (
+    <select id={id} aria-label={label} value={value ?? ""} onChange={(e) => e.target.value && onChange(e.target.value as PackageKey)} className={`${selectClass} ${inactive ? "text-amber-800" : ""}`}>
+      <option value="">No package</option>
+      {PACKAGE_OPTIONS.map((option) => (
+        <option key={option.value} value={option.value}>
+          {option.label}
+          {inactive && option.value === value ? ` (${status})` : ""}
+        </option>
+      ))}
+    </select>
   );
 }

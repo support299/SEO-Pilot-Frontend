@@ -11,6 +11,9 @@ export type NavIconName =
   | "connections"
   | "execution"
   | "history"
+  | "plan"
+  | "checklist"
+  | "workplan"
   | "settings";
 
 export type NavItem = {
@@ -29,6 +32,8 @@ export const primaryNav: NavItem[] = [
   { path: "manager", label: "SEO Manager", icon: "manager" },
   { path: "approvals", label: "Approvals", icon: "approvals" },
   { path: "site-health", label: "Site Health", icon: "health" },
+  { path: "checklist", label: "Audit & checklist", icon: "checklist" },
+  { path: "work-plan", label: "Work plan", icon: "workplan" },
 ];
 
 export const secondaryNav: NavItem[] = [
@@ -36,6 +41,7 @@ export const secondaryNav: NavItem[] = [
   { path: "connections", label: "Connections", icon: "connections" },
   { path: "work", label: "Execution", icon: "execution" },
   { path: "history", label: "History", icon: "history" },
+  { path: "plan", label: "Plan", icon: "plan" },
   { path: "settings", label: "Settings", icon: "settings" },
 ];
 
@@ -52,6 +58,9 @@ const titles: Record<string, string> = {
   connections: "Connections & measurement",
   work: "Execution",
   history: "History",
+  plan: "Plan",
+  checklist: "Audit & checklist",
+  "work-plan": "Work plan",
   settings: "Settings",
 };
 

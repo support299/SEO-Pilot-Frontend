@@ -79,6 +79,15 @@ export type KeywordDetail = {
   history: ScanSummary[];
 };
 
+export type PlaceResult = {
+  place_id: string;
+  name: string;
+  address: string;
+  latitude: number;
+  longitude: number;
+  website: string;
+};
+
 export type ProfileInput = {
   latitude: number;
   longitude: number;

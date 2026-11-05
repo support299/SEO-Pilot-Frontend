@@ -57,7 +57,7 @@ export function LocalVisibilityPage() {
           <Card>
             <h2 className="text-sm font-semibold">Where is the business?</h2>
             <p className="mb-4 mt-1 text-sm text-muted">Set the centre of the grid. We check Google Maps from spots around it.</p>
-            <LocationSetupForm profile={null} gridSizes={overview.limits.grid_sizes} busy={lv.busy} onSave={lv.saveProfile} />
+            <LocationSetupForm businessId={business.id} businessName={business.name} profile={null} gridSizes={overview.limits.grid_sizes} busy={lv.busy} onSave={lv.saveProfile} />
           </Card>
         ) : (
           <EmptyState title="Local tracking isn't set up yet" description="Your SEO team is setting this up. Results will appear here once the first scan has run." />
@@ -82,7 +82,7 @@ export function LocalVisibilityPage() {
                 <h2 className="text-sm font-semibold">Keywords</h2>
                 <p className="mt-1 text-xs text-muted">
                   {overview.profile.grid_size}×{overview.profile.grid_size} grid, {overview.profile.radius_miles ?? Math.round((overview.profile.radius_km / 1.609344) * 10) / 10} miles reach · looking for {overview.profile.matching_domain || "no website set"}
-                  {business.can_edit ? ` · ${overview.limits.scans_today}/${overview.limits.scans_per_day} scans used today` : ""}
+                  {" · refreshed automatically every month"}
                 </p>
               </div>
               {business.can_edit && !editingLocation ? (
@@ -94,7 +94,7 @@ export function LocalVisibilityPage() {
 
             {editingLocation ? (
               <div className="mt-4 border-t border-border pt-4">
-                <LocationSetupForm profile={overview.profile} gridSizes={overview.limits.grid_sizes} busy={lv.busy} onSave={lv.saveProfile} onCancel={() => setEditingLocation(false)} />
+                <LocationSetupForm businessId={business.id} businessName={business.name} profile={overview.profile} gridSizes={overview.limits.grid_sizes} busy={lv.busy} onSave={lv.saveProfile} onCancel={() => setEditingLocation(false)} />
               </div>
             ) : null}
 
@@ -122,7 +122,6 @@ export function LocalVisibilityPage() {
                         canEdit={business.can_edit}
                         busy={lv.busy}
                         onSelect={() => lv.select(row.id)}
-                        onScan={() => lv.startScan(row.id)}
                         onRemove={() => {
                           if (window.confirm(`Stop tracking “${row.keyword}” and delete its history?`)) lv.removeKeyword(row.id);
                         }}
@@ -179,7 +178,7 @@ export function LocalVisibilityPage() {
               ) : !lv.detail.scanning ? (
                 <EmptyState
                   title="No scan yet"
-                  description={business.can_edit ? "Run a scan to see where the business ranks around its location." : "The first scan hasn't run yet. Results will appear here."}
+                  description="The first scan runs automatically within a day. Results will appear here."
                 />
               ) : null}
             </Card>
@@ -201,7 +200,6 @@ function KeywordRow({
   canEdit,
   busy,
   onSelect,
-  onScan,
   onRemove,
 }: {
   row: TrackedKeywordRow;
@@ -209,7 +207,6 @@ function KeywordRow({
   canEdit: boolean;
   busy: boolean;
   onSelect: () => void;
-  onScan: () => void;
   onRemove: () => void;
 }) {
   const delta = scoreDelta(row.latest, row.previous);
@@ -237,9 +234,6 @@ function KeywordRow({
           <span className="text-xs text-muted">Scanning…</span>
         ) : canEdit ? (
           <span className="inline-flex gap-2">
-            <Button variant="secondary" className="px-3 py-1.5" onClick={onScan} disabled={busy}>
-              {row.latest ? "Scan again" : "Scan"}
-            </Button>
             <Button variant="secondary" className="px-3 py-1.5" onClick={onRemove} disabled={busy} aria-label={`Remove ${row.keyword}`}>
               Remove
             </Button>

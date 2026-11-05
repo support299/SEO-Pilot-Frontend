@@ -1,4 +1,5 @@
 import { apiClient } from "./apiClient";
+import type { PackageKey, SubscriptionStatus } from "@/types/plan";
 
 export type CustomerInput = {
   customer_name: string;
@@ -6,6 +7,7 @@ export type CustomerInput = {
   website?: string;
   email?: string;
   password?: string;
+  package?: PackageKey;
 };
 
 export type CreatedCustomer = {
@@ -19,7 +21,7 @@ export type AgencyClient = {
   name: string;
   is_paused: boolean;
   created_at: string;
-  businesses: { id: number; name: string; website: string | null; is_paused: boolean; effective_paused: boolean }[];
+  businesses: { id: number; name: string; website: string | null; is_paused: boolean; effective_paused: boolean; package: PackageKey | null; package_label: string | null; subscription_status: SubscriptionStatus }[];
   members: { email: string; role: string }[];
 };
 

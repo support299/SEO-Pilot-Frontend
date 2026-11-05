@@ -29,3 +29,8 @@ export class ApiError extends Error {
     this.details = body?.error?.details;
   }
 }
+
+/** The server's own message when it sent one (e.g. "Record who agreed."), otherwise the fallback. */
+export function errorMessage(error: unknown, fallback: string): string {
+  return error instanceof ApiError && error.message !== "Something went wrong." ? error.message : fallback;
+}

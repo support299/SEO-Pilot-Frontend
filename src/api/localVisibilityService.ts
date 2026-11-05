@@ -1,5 +1,5 @@
 import { apiClient } from "./apiClient";
-import type { KeywordDetail, LocalProfile, LocalVisibilityOverview, ProfileInput } from "@/types/localVisibility";
+import type { KeywordDetail, LocalProfile, LocalVisibilityOverview, PlaceResult, ProfileInput } from "@/types/localVisibility";
 
 async function getOverview(businessId: number): Promise<LocalVisibilityOverview> {
   const { data } = await apiClient.get<LocalVisibilityOverview>(`/local-visibility/${businessId}/`);
@@ -9,6 +9,11 @@ async function getOverview(businessId: number): Promise<LocalVisibilityOverview>
 async function saveProfile(businessId: number, input: ProfileInput): Promise<LocalProfile> {
   const { data } = await apiClient.put<LocalProfile>(`/local-visibility/${businessId}/profile/`, input);
   return data;
+}
+
+async function searchPlaces(businessId: number, query: string): Promise<PlaceResult[]> {
+  const { data } = await apiClient.get<{ results: PlaceResult[] }>(`/local-visibility/${businessId}/places/`, { params: { q: query } });
+  return data.results;
 }
 
 async function addKeyword(businessId: number, keyword: string): Promise<{ id: number; keyword: string }> {
@@ -29,4 +34,4 @@ async function startScan(businessId: number, keywordId: number): Promise<void> {
   await apiClient.post(`/local-visibility/${businessId}/keywords/${keywordId}/scan/`);
 }
 
-export const localVisibilityService = { getOverview, saveProfile, addKeyword, removeKeyword, getKeyword, startScan };
+export const localVisibilityService = { getOverview, saveProfile, searchPlaces, addKeyword, removeKeyword, getKeyword, startScan };

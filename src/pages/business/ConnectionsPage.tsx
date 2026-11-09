@@ -7,6 +7,7 @@ import { WordPressConnectForm } from "@/components/wordpress/WordPressConnectFor
 import { useAnalytics } from "@/hooks/useAnalytics";
 import { useBusiness } from "@/hooks/useBusiness";
 import { useSearchConsole } from "@/hooks/useSearchConsole";
+import { useAuth } from "@/hooks/useAuth";
 import { useWordPress } from "@/hooks/useWordPress";
 
 const GA_ERROR_MESSAGES: Record<string, string> = {
@@ -21,6 +22,8 @@ export function ConnectionsPage() {
   const sc = useSearchConsole(business.id);
   const ga = useAnalytics(business.id, 28);
   const wp = useWordPress(business.id);
+  const { user } = useAuth();
+  const publishingOn = wp.status?.connected ? wp.status.publishing_enabled : true;
   const gaError = searchParams.get("gaError");
   const gaDetail = searchParams.get("gaDetail");
   const gaConnected = searchParams.get("gaConnected");
@@ -112,23 +115,59 @@ export function ConnectionsPage() {
       {wp.status ? (
         <Card>
           {wp.status.connected ? (
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <p className="text-sm font-semibold">WordPress</p>
-                <p className="mt-1 text-sm text-muted">Connected · {wp.status.website_url.replace(/^https?:\/\//, "")} · {wp.status.wp_user_name}</p>
-                {wp.status.last_error ? <p className="mt-1 text-sm text-danger">{wp.status.last_error}</p> : null}
+            <>
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-sm font-semibold">WordPress</p>
+                  <p className="mt-1 text-sm text-muted">Connected · {wp.status.website_url.replace(/^https?:\/\//, "")} · {wp.status.wp_user_name}</p>
+                  {wp.status.last_error ? <p className="mt-1 text-sm text-danger">{wp.status.last_error}</p> : null}
+                </div>
+                <div className="flex flex-wrap items-center gap-3">
+                  <Link to={`/businesses/${business.id}/work`} className="text-sm font-medium text-primary hover:text-primary-hover">
+                    View Execution →
+                  </Link>
+                  {business.can_edit ? (
+                    <Button variant="danger" onClick={() => wp.disconnect()} loading={wp.isDisconnecting}>
+                      Disconnect
+                    </Button>
+                  ) : null}
+                </div>
               </div>
-              <div className="flex flex-wrap items-center gap-3">
-                <Link to={`/businesses/${business.id}/work`} className="text-sm font-medium text-primary hover:text-primary-hover">
-                  View Execution →
-                </Link>
-                {business.can_edit ? (
-                  <Button variant="danger" onClick={() => wp.disconnect()} loading={wp.isDisconnecting}>
-                    Disconnect
-                  </Button>
-                ) : null}
-              </div>
-            </div>
+              {business.can_edit ? (
+                <div className="mt-4 flex flex-col gap-3 border-t border-border pt-4">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-medium">SEO plugin: {wp.status.seo_plugin_label}</p>
+                      <p className="mt-1 text-sm text-muted">
+                        {wp.status.seo_plugin
+                          ? "Approved title and meta description changes can be published to this site."
+                          : "Without All in One SEO, Yoast or Rank Math, published titles and meta descriptions won't change on the page. Install one, then check again."}
+                      </p>
+                    </div>
+                    <Button variant="secondary" onClick={() => wp.checkPlugin()} loading={wp.isCheckingPlugin}>
+                      Check again
+                    </Button>
+                  </div>
+                  {user?.is_agency_admin ? (
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-medium">Publishing: {wp.status.publishing_enabled ? "on" : "off"}</p>
+                        <p className="mt-1 text-sm text-muted">
+                          {wp.status.publishing_enabled
+                            ? "Turn off if this WordPress is only a content store and the live site is built elsewhere."
+                            : "This WordPress doesn't control the live site. Findings are tracked; no changes are proposed or published."}
+                        </p>
+                      </div>
+                      <Button variant="secondary" onClick={() => wp.setPublishing(!publishingOn)} loading={wp.isSwitchingPublishing}>
+                        {wp.status.publishing_enabled ? "Turn publishing off" : "Turn publishing on"}
+                      </Button>
+                    </div>
+                  ) : !wp.status.publishing_enabled ? (
+                    <p className="text-sm text-muted">Publishing is off: this WordPress doesn't control the live site.</p>
+                  ) : null}
+                </div>
+              ) : null}
+            </>
           ) : (
             <>
               <p className="text-sm font-semibold">WordPress</p>

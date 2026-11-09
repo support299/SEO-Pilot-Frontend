@@ -8,6 +8,12 @@ export type WordPressStatus =
       connected_at: string;
       last_verified_at: string | null;
       last_error: string | null;
+      /** False when this WordPress is only a content store behind a non-WordPress live site: nothing is published. */
+      publishing_enabled: boolean;
+      /** "aioseo" | "yoast" | "rank_math" | "" (none detected). */
+      seo_plugin: string;
+      seo_plugin_label: string;
+      seo_plugin_checked_at: string | null;
     };
 
 export type WordPressObjectType = "page" | "post";

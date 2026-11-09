@@ -14,6 +14,16 @@ async function disconnect(businessId: number): Promise<void> {
   await apiClient.post(`/wordpress/${businessId}/disconnect/`);
 }
 
+async function checkPlugin(businessId: number): Promise<WordPressStatus> {
+  const { data } = await apiClient.post<WordPressStatus>(`/wordpress/${businessId}/plugin-check/`);
+  return data;
+}
+
+async function setPublishing(businessId: number, enabled: boolean): Promise<WordPressStatus> {
+  const { data } = await apiClient.post<WordPressStatus>(`/wordpress/${businessId}/publishing/`, { enabled });
+  return data;
+}
+
 async function getInventory(businessId: number, objectType: WordPressObjectType): Promise<WordPressInventoryItem[]> {
   const { data } = await apiClient.get<WordPressInventoryItem[]>(`/wordpress/${businessId}/inventory/`, { params: { type: objectType } });
   return data;
@@ -42,4 +52,4 @@ async function rollback(businessId: number, packetId: number): Promise<void> {
   await apiClient.post(`/wordpress/${businessId}/change-packets/${packetId}/rollback/`);
 }
 
-export const wordpressService = { getStatus, connect, disconnect, getInventory, listChangePackets, proposeChange, decide, apply, rollback };
+export const wordpressService = { getStatus, connect, disconnect, checkPlugin, setPublishing, getInventory, listChangePackets, proposeChange, decide, apply, rollback };

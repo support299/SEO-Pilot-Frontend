@@ -56,7 +56,11 @@ export function ExecutionPage() {
     <>
       <PageHeader eyebrow="Execution" title="Execution" description={`Changes proposed for ${wp.status.website_url.replace(/^https?:\/\//, "")}, from idea to published.`} />
 
-      {business.can_edit ? (
+      {!wp.status.publishing_enabled ? (
+        <p className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          Publishing is off for this website: its WordPress doesn&apos;t control the live site, so no changes can be proposed or published here.
+        </p>
+      ) : business.can_edit ? (
         <Card>
           <h2 className="text-sm font-semibold text-foreground">Propose a change</h2>
           <p className="mt-1 text-sm text-muted">Pick a page or post and propose a new title or meta description. Nothing goes live until it&apos;s approved and published.</p>

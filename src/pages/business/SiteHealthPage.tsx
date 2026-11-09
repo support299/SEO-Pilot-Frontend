@@ -61,6 +61,7 @@ export function SiteHealthPage() {
               <p className="mt-3 text-5xl font-semibold tracking-tight">{report.score ?? "—"}</p>
               <p className="mt-1 text-sm text-muted">out of 100</p>
               <p className="mt-3 text-sm text-muted">{report.pages_crawled} pages fetched. Critical issues: {report.critical_issues}.</p>
+              <p className="mt-2 text-xs text-muted">Each issue costs more the larger the share of pages it affects, so one broken page on a big site barely moves the score.</p>
             </Card>
             <div className="grid gap-3 sm:grid-cols-2">
               {report.categories.map((category) => (
@@ -75,7 +76,9 @@ export function SiteHealthPage() {
             </div>
           </div>
 
-          {report.findings.length === 0 ? (
+          {!business.can_edit ? (
+            <p className="text-sm text-muted">The detailed findings go to your SEO team. The agreed fixes and their progress are on the Work plan page.</p>
+          ) : report.findings.length === 0 ? (
             <EmptyState title="No findings in this crawl" description="The pages we fetched loaded and had titles and descriptions." />
           ) : (
             <div className="overflow-hidden rounded-xl border border-border bg-surface">

@@ -21,6 +21,8 @@ export type NavItem = {
   label: string;
   icon: NavIconName;
   match?: string[];
+  /** Hidden from customer logins (viewer role); the API refuses them too. */
+  staffOnly?: boolean;
 };
 
 export const primaryNav: NavItem[] = [
@@ -30,7 +32,7 @@ export const primaryNav: NavItem[] = [
   { path: "opportunities", label: "Opportunities", icon: "opportunities" },
   { path: "pages", label: "Pages", icon: "pages" },
   { path: "manager", label: "SEO Manager", icon: "manager" },
-  { path: "approvals", label: "Approvals", icon: "approvals" },
+  { path: "approvals", label: "Approvals", icon: "approvals", staffOnly: true },
   { path: "site-health", label: "Site Health", icon: "health" },
   { path: "checklist", label: "Audit & checklist", icon: "checklist" },
   { path: "work-plan", label: "Work plan", icon: "workplan" },

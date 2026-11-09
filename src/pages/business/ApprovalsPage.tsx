@@ -23,6 +23,23 @@ export function ApprovalsPage() {
   const waitingChanges = wp.packets?.filter((p) => p.status === "awaiting_approval" || p.status === "stale" || p.status === "approved") ?? [];
   const crawlCompleted = health.loadState === "loaded" && health.report?.status === "completed";
 
+  if (!business.can_edit) {
+    return (
+      <>
+        <PageHeader eyebrow="Approvals" title="Approvals" description="Decisions on crawl findings and website changes are made by your SEO team." />
+        <EmptyState
+          title="This page is for your SEO team"
+          description="You can follow the agreed work and its progress on the Work plan page."
+          action={
+            <Link to={`/businesses/${business.id}/work-plan`} className="text-sm font-medium text-primary hover:text-primary-hover">
+              Open Work plan →
+            </Link>
+          }
+        />
+      </>
+    );
+  }
+
   return (
     <>
       <PageHeader
@@ -30,6 +47,12 @@ export function ApprovalsPage() {
         title="Approvals"
         description="Each issue from the latest completed crawl is listed once, with the pages it affects. Approve a crawl issue to mark it as work you want done, or reject it to set it aside; that only records your decision. Website changes suggested by you or an AI agent appear above and are published to WordPress only after you approve them."
       />
+
+      {wp.status?.connected && !wp.status.publishing_enabled ? (
+        <p className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          Publishing is off for this website: its WordPress doesn&apos;t control the live site. Approving a finding only records that you want it fixed; the fix happens through the work plan.
+        </p>
+      ) : null}
 
       {waitingChanges.length > 0 ? (
         <>

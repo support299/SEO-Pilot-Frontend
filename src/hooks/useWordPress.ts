@@ -104,6 +104,34 @@ export function useWordPress(businessId: number) {
     }
   }
 
+  const [isCheckingPlugin, setIsCheckingPlugin] = useState(false);
+  const [isSwitchingPublishing, setIsSwitchingPublishing] = useState(false);
+
+  async function checkPlugin() {
+    setIsCheckingPlugin(true);
+    try {
+      const result = await wordpressService.checkPlugin(businessId);
+      setStatus(result);
+      toast.show("success", result.connected && result.seo_plugin ? `SEO plugin detected: ${result.seo_plugin_label}.` : "No supported SEO plugin detected.");
+    } catch (error) {
+      toast.show("error", errorMessage(error));
+    } finally {
+      setIsCheckingPlugin(false);
+    }
+  }
+
+  async function setPublishing(enabled: boolean) {
+    setIsSwitchingPublishing(true);
+    try {
+      setStatus(await wordpressService.setPublishing(businessId, enabled));
+      toast.show("success", enabled ? "Publishing to WordPress is on." : "Publishing to WordPress is off for this website.");
+    } catch (error) {
+      toast.show("error", errorMessage(error));
+    } finally {
+      setIsSwitchingPublishing(false);
+    }
+  }
+
   const getInventory = useCallback((objectType: WordPressObjectType): Promise<WordPressInventoryItem[]> => wordpressService.getInventory(businessId, objectType), [businessId]);
 
   function upsertPacket(packet: ChangePacket) {
@@ -205,8 +233,12 @@ export function useWordPress(businessId: number) {
     workingIds,
     isConnecting,
     isDisconnecting,
+    isCheckingPlugin,
+    isSwitchingPublishing,
     connect,
     disconnect,
+    checkPlugin,
+    setPublishing,
     getInventory,
     proposeChange,
     decide,

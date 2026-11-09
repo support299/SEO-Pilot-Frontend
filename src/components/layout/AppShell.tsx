@@ -35,11 +35,11 @@ export function AppShell({ business, children }: { business: Business; children:
           </div>
 
           <nav className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto px-3 py-3" aria-label="SEO Pilot">
-            {primaryNav.map((item) => (
+            {primaryNav.filter((item) => business.can_edit || !item.staffOnly).map((item) => (
               <ShellNavLink key={item.path} to={`${base}/${item.path}`} icon={item.icon} label={item.label} onClick={() => setNavOpen(false)} />
             ))}
             <div className="my-2 border-t border-border" />
-            {secondaryNav.map((item) => (
+            {secondaryNav.filter((item) => business.can_edit || !item.staffOnly).map((item) => (
               <ShellNavLink key={item.path} to={`${base}/${item.path}`} icon={item.icon} label={item.label} onClick={() => setNavOpen(false)} />
             ))}
           </nav>

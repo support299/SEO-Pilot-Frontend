@@ -71,6 +71,32 @@ export function ChangePacketCard({
             <dd className="inline text-muted">{packet.proposed_changes.meta_description}</dd>
           </div>
         ) : null}
+        {packet.proposed_changes.canonical_url ? (
+          <div>
+            <dt className="inline font-medium text-foreground">New canonical URL: </dt>
+            <dd className="inline break-all text-muted">{packet.proposed_changes.canonical_url}</dd>
+          </div>
+        ) : null}
+        {packet.proposed_changes.robots ? (
+          <div>
+            <dt className="inline font-medium text-foreground">Search engines: </dt>
+            <dd className="inline text-muted">{packet.proposed_changes.robots === "noindex" ? "Hide this page from search results" : "Allow this page in search results"}</dd>
+          </div>
+        ) : null}
+        {packet.proposed_changes.image_alt?.length ? (
+          <div>
+            <dt className="font-medium text-foreground">New image descriptions (alt text):</dt>
+            <dd>
+              <ul className="mt-1 list-disc space-y-0.5 pl-5 text-muted">
+                {packet.proposed_changes.image_alt.map((image) => (
+                  <li key={image.src}>
+                    <span className="break-all">{image.src.split("/").pop()}</span>: {image.alt}
+                  </li>
+                ))}
+              </ul>
+            </dd>
+          </div>
+        ) : null}
       </dl>
 
       {packet.last_error ? <p className="mt-3 text-sm text-danger">{packet.last_error}</p> : null}

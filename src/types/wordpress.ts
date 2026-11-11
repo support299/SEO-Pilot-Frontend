@@ -30,6 +30,10 @@ export type WordPressInventoryItem = {
 export type ProposedChanges = {
   title?: string;
   meta_description?: string;
+  canonical_url?: string;
+  /** Whether search engines may list the page. */
+  robots?: "index" | "noindex";
+  image_alt?: { src: string; alt: string }[];
 };
 
 export type ChangePacketStatus =
@@ -54,8 +58,8 @@ export type ChangePacket = {
   source: "manual" | "agent";
   agent_name: string;
   status: ChangePacketStatus;
-  before_snapshot: Record<string, string> | null;
-  after_snapshot: Record<string, string> | null;
+  before_snapshot: Record<string, unknown> | null;
+  after_snapshot: Record<string, unknown> | null;
   last_error: string;
   created_at: string;
   approved_at: string | null;
